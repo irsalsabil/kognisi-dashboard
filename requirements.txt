@@ -6,4 +6,3 @@ sshtunnel
 gspread
 oauth2client
 paramiko
-streamlit_gsheets
