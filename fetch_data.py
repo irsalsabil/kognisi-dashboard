@@ -2,22 +2,26 @@ import streamlit as st
 import pandas as pd
 import pymysql
 from sshtunnel import SSHTunnelForwarder
+import paramiko
+from io import StringIO
 import gspread
 from oauth2client.service_account import ServiceAccountCredentials
 
 # Function to connect to MyKG via SSH tunnel and fetch data
 def fetch_data_mykg():
     try:
-        private_key_path = st.secrets["ssh"]["private_key_path"]
-
-        with open(private_key_path, 'r') as key_file:
-            private_key_content = key_file.read()
-
+        # Load the private key content from secrets
+        private_key_content = st.secrets["key_mykg"]["id_rsa_streamlit"]
+        private_key_passphrase = st.secrets["ssh_mykg"].get("private_key_passphrase")
+        
+        # Create an RSA key object from the private key content
+        private_key_file = StringIO(private_key_content)
+        private_key = paramiko.RSAKey.from_private_key(private_key_file, password=private_key_passphrase)
+        
         with SSHTunnelForwarder(
-            (st.secrets["ssh"]["host"], st.secrets["ssh"]["port"]),
-            ssh_username=st.secrets["ssh"]["username"],
-            ssh_pkey=private_key_path,
-            ssh_private_key_password=st.secrets["ssh"].get("private_key_passphrase"),
+            (st.secrets["ssh_mykg"]["host"], st.secrets["ssh_mykg"]["port"]),
+            ssh_username=st.secrets["ssh_mykg"]["username"],
+            ssh_pkey=private_key,
             remote_bind_address=(st.secrets["mykg"]["host"], st.secrets["mykg"]["port"])
         ) as tunnel:
             connection_kwargs = {

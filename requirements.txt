@@ -5,4 +5,4 @@ pymysql
 sshtunnel
 gspread
 oauth2client
-streamlit_extras
+paramiko
