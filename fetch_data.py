@@ -6,6 +6,7 @@ import paramiko
 from io import StringIO
 import gspread
 from oauth2client.service_account import ServiceAccountCredentials
+import toml
 
 # Function to connect to MyKG via SSH tunnel and fetch data
 def fetch_data_mykg():
@@ -75,12 +76,13 @@ def fetch_data_discovery():
 
 # Function to fetch data from SAP with selected columns
 def fetch_data_sap(selected_columns):
-    creds_path = st.secrets["sap"]["json_keyfile"]
+    secret_info = st.secrets["json_sap"]
     scope = ["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/auth/drive"]
-    creds = ServiceAccountCredentials.from_json_keyfile_name(creds_path, scope)
+    creds = ServiceAccountCredentials.from_json_keyfile_dict(secret_info, scope)
     client = gspread.authorize(creds)
     spreadsheet = client.open('0. Active Employee - Monthly Updated')
     sheet = spreadsheet.sheet1
     data = sheet.get_all_records()
     df = pd.DataFrame(data)
     return df[selected_columns]
+
