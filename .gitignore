@@ -2,4 +2,6 @@
 kognisi-dashboard-0a318e986d8f.json
 id_rsa_streamlit
 query_mykg.sql
-query_mykg.sql
+query_discovery.sql
+fetch_data.py
+data_processing.py
