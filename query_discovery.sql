@@ -1,6 +1,7 @@
 SELECT  
     u.email, 
     u.name, 
+    '-' AS 'nik',
     CASE 
         WHEN ubr.bundle_id = 1 THEN 'GI'
         WHEN ubr.bundle_id = 2 THEN 'LEAN'

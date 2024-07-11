@@ -3,14 +3,14 @@ import streamlit as st
 import altair as alt
 from data_processing import finalize_data
 
-# Return data from data_processing
-merged_df, df_combined_mysql, df_sap = finalize_data()
-
 # Set the title and favicon that appear in the Browser's tab bar.
 st.set_page_config(
     page_title='Kognisi Learners',
     page_icon=':bar_chart:',  # This is an emoji shortcode. Could be a URL too.
 )
+
+# Return data from data_processing
+merged_df, df_combined_mysql, df_sap = finalize_data()
 
 # Add logo and title above sidebar
 st.logo('kognisi_logo.png')
@@ -50,10 +50,10 @@ filtered_df = merged_df[
     (merged_df['last_updated'] <= to_date) & (merged_df['last_updated'] >= from_date)
 ]
 
-# Calculate the distinct counts of the email column
-total_count = filtered_df['email'].nunique()
-internal_count = filtered_df[filtered_df['status'] == 'Internal']['email'].nunique()
-external_count = filtered_df[filtered_df['status'] == 'External']['email'].nunique()
+# Calculate the distinct counts of the count AL column
+total_count = filtered_df['count AL'].nunique()
+internal_count = filtered_df[filtered_df['status'] == 'Internal']['count AL'].nunique()
+external_count = filtered_df[filtered_df['status'] == 'External']['count AL'].nunique()
 
 # Display metrics column
 col1, col2, col3 = st.columns(3)
@@ -64,16 +64,16 @@ col3.metric("External", external_count)
 # Platform Distribution
 st.subheader('Platform Distribution', divider='gray')
 
-# Group by platform and count unique emails
-platform_counts = filtered_df.groupby('platform')['email'].nunique().reset_index()
-platform_counts.columns = ['platform', 'unique_email_count']
+# Group by platform and count unique count ALs
+platform_counts = filtered_df.groupby('platform')['count AL'].nunique().reset_index()
+platform_counts.columns = ['platform', 'unique_count AL_count']
 
 # Create Altair bar chart
-# st.title('Platform Distribution based on Unique Emails')
+# st.title('Platform Distribution based on Unique count ALs')
 chart = alt.Chart(platform_counts).mark_bar().encode(
     x=alt.X('platform', sort='-y', axis=alt.Axis(title='Platform')),
-    y=alt.Y('unique_email_count', axis=alt.Axis(title='Active Learners')),
-    tooltip=['platform', 'unique_email_count']
+    y=alt.Y('unique_count AL_count', axis=alt.Axis(title='Active Learners')),
+    tooltip=['platform', 'unique_count AL_count']
 ).properties(
     width=alt.Step(80)  # Adjust width as needed
 )

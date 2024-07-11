@@ -3,6 +3,7 @@ FROM (
     SELECT 
         u.email, 
         u.name,
+        u.nik,
         CONCAT(cp.title, '-', cs.title, '-', cm.title) AS 'title', 
         cmu.updated_at AS 'last_updated',
         cmu.progress_duration AS 'duration',
@@ -28,6 +29,7 @@ FROM (
     SELECT DISTINCT
         u.email, 
         u.name, 
+        u.nik,
         c.title,
         cu.updated_at AS 'last_updated', 
         cu.progress_duration AS 'duration', 

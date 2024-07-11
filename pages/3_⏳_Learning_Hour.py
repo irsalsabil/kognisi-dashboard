@@ -16,10 +16,6 @@ st.logo('kognisi_logo.png')
 # Fetch the data
 merged_df, df_combined_mysql, df_sap = finalize_data()
 
-# Ensure email columns are consistent: trim spaces and convert to lowercase
-df_combined_mysql['email'] = df_combined_mysql['email'].str.strip().str.lower()
-df_sap['email'] = df_sap['email'].str.strip().str.lower()
-
 # Define the dynamic target learning hours based on the current month
 current_month = datetime.now().month
 target_hours = current_month    # Target is 1 hour per month
@@ -28,8 +24,8 @@ target_hours = current_month    # Target is 1 hour per month
 df_combined_mysql['duration_hours'] = df_combined_mysql['duration'] / 3600
 
 # Calculate total learning hours per employee from MySQL data
-learning_hours = df_combined_mysql.groupby('email')['duration_hours'].sum().reset_index()
-learning_hours.columns = ['email', 'total_hours']
+learning_hours = df_combined_mysql.groupby('count AL')['duration_hours'].sum().reset_index()
+learning_hours.columns = ['count AL', 'total_hours']
 
 # Determine whether each employee achieved the target
 learning_hours['achieved_target'] = learning_hours['total_hours'] >= target_hours
@@ -49,7 +45,7 @@ if selected_unit != 'All':
     merged_df = merged_df[merged_df['unit'] == selected_unit]
 
 # Merge with SAP data to get unit information
-learning_hours = pd.merge(learning_hours, df_sap[['email', breakdown_variable]], on='email', how='left')
+learning_hours = pd.merge(learning_hours, df_sap, left_on='count AL', right_on='nik', how='left')
 
 # Aggregate data by unit
 unit_achievement = learning_hours.pivot_table(
@@ -69,7 +65,7 @@ if False not in unit_achievement.columns:
 unit_achievement.columns = [breakdown_variable] + ['Not Achieved', 'Achieved']
 
 # Calculate total employees per breakdown_variable from SAP data
-total_sap = df_sap.groupby(breakdown_variable)['email'].nunique().reset_index()
+total_sap = df_sap.groupby(breakdown_variable)['nik'].nunique().reset_index()
 total_sap.columns = [breakdown_variable, 'Total SAP']
 
 # Merge the total_sap with unit_achievement on breakdown_variable
@@ -116,7 +112,7 @@ st.markdown(f'The target learning hours for this month ({datetime.now().strftime
 
 # Calculate summary statistics
 total_employees = df_sap['nik'].nunique()
-achieved_employees = learning_hours[learning_hours['achieved_target']]['email'].nunique()
+achieved_employees = learning_hours[learning_hours['achieved_target']]['count AL'].nunique()
 percent_achieved = (achieved_employees / total_employees) * 100
 
 st.write('## Summary:')

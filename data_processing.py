@@ -1,16 +1,19 @@
+import streamlit as st
 import pandas as pd
-from fetch_data import fetch_data_mykg, fetch_data_discovery, fetch_data_sap
+from fetch_data import fetch_data_mykg, fetch_data_id, fetch_data_discovery, fetch_data_sap
 
+@st.cache_data
 def finalize_data():
-    # Fetch data from both MyKG and Discovery databases
+    # Fetch data from both MyKG, ID, and Discovery databases
     df_mykg = fetch_data_mykg()
+    df_id = fetch_data_id()
     df_discovery = fetch_data_discovery()
 
     # Combine the data from both MyKG and Discovery databases
-    df_combined_mysql = pd.concat([df_mykg, df_discovery], ignore_index=True)
+    df_combined_mysql = pd.concat([df_mykg, df_id, df_discovery], ignore_index=True)
 
     # Define the columns to be selected from the SAP Google Sheet
-    selected_columns = ['email', 'nik', 'unit', 'subunit', 'layer', 'division', 'position']  # Replace with actual column names you need
+    selected_columns = ['email', 'nik', 'unit', 'subunit', 'layer', 'division', 'position']  # Adjust as needed
 
     # Fetch data from SAP with selected columns
     df_sap = fetch_data_sap(selected_columns)
@@ -19,8 +22,35 @@ def finalize_data():
     df_combined_mysql['email'] = df_combined_mysql['email'].str.strip().str.lower()
     df_sap['email'] = df_sap['email'].str.strip().str.lower()
 
-    # Merge data from combined MySQL and SAP based on email
-    merged_df = pd.merge(df_combined_mysql, df_sap, on='email', how='left', indicator=True)
+    # Ensure nik columns are strings and pad with leading zeros to ensure 6 digits
+    df_combined_mysql['nik'] = df_combined_mysql['nik'].astype(str).str.zfill(6)
+    df_sap['nik'] = df_sap['nik'].astype(str).str.zfill(6)
+
+    # Create dictionaries from df_sap for quick lookup
+    email_to_nik = dict(zip(df_sap['email'], df_sap['nik']))
+
+    # Define a function to perform the lookup
+    def lookup_nik(row):
+        # Check by nik
+        if row['nik'] in df_sap['nik'].values:
+            return row['nik']
+        
+        # Check by email if nik lookup fails
+        nik_from_email = email_to_nik.get(row['email'])
+        if nik_from_email is not None:
+            return nik_from_email
+        
+        # Return email if neither lookup succeeds
+        return row['email']
+
+    # Apply the lookup function to each row
+    df_combined_mysql['count AL'] = df_combined_mysql.apply(lookup_nik, axis=1)
+
+    # Ensure the 'count AL' column is string
+    df_combined_mysql['count AL'] = df_combined_mysql['count AL'].astype(str)
+
+    # Merge data from combined MySQL and SAP based on 'count AL' and 'email'
+    merged_df = pd.merge(df_combined_mysql, df_sap, left_on='count AL', right_on='nik', how='left', indicator=True)
 
     # Add a new column to label each row as 'internal' or 'external'
     merged_df['status'] = merged_df['_merge'].apply(lambda x: 'Internal' if x == 'both' else 'External')
@@ -29,6 +59,8 @@ def finalize_data():
     merged_df.drop(columns=['_merge'], inplace=True)
     
     # Convert last_update to timestamp then extract the date
-    merged_df['last_updated'] = pd.to_datetime(merged_df['last_updated'], errors='coerce').dt.date
+    if 'last_updated' in merged_df.columns:
+        merged_df['last_updated'] = pd.to_datetime(merged_df['last_updated'], errors='coerce').dt.date
 
+    # Return the dataframes
     return merged_df, df_combined_mysql, df_sap

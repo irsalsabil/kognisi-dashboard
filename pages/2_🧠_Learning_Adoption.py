@@ -15,10 +15,6 @@ st.logo('kognisi_logo.png')
 # Fetch the data
 merged_df, df_combined_mysql, df_sap = finalize_data()
 
-# Ensure email columns are consistent: trim spaces and convert to lowercase
-df_combined_mysql['email'] = df_combined_mysql['email'].str.strip().str.lower()
-df_sap['email'] = df_sap['email'].str.strip().str.lower()
-
 # Sidebar: Add a selectbox for unit filter
 st.sidebar.markdown('### Unit Filter')
 unit_list = ['All'] + list(df_sap['unit'].unique())
@@ -35,7 +31,7 @@ if selected_unit != 'All':
 
 # Calculate Active Learners
 active_learners = merged_df[merged_df['status'] == 'Internal']
-active_counts = active_learners.groupby(breakdown_variable)['email'].nunique().reset_index()
+active_counts = active_learners.groupby(breakdown_variable)['count AL'].nunique().reset_index()
 active_counts.columns = [breakdown_variable, 'Active Learners']
 
 # Calculate Passive Learners

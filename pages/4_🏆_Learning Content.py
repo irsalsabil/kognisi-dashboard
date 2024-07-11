@@ -15,9 +15,6 @@ st.logo('kognisi_logo.png')
 # Fetch the data
 merged_df, df_combined_mysql, df_sap = finalize_data()
 
-# Ensure email columns are consistent: trim spaces and convert to lowercase
-merged_df['email'] = merged_df['email'].str.strip().str.lower()
-
 # Sidebar: Add a selectbox for unit filter
 st.sidebar.markdown('### Unit Filter')
 unit_list = ['All'] + list(df_sap['unit'].unique())
@@ -63,9 +60,9 @@ filtered_df = merged_df[
 ]
 
 # Calculate the leaderboard data based on the filtered data
-leaderboard = filtered_df.groupby('title')['email'].nunique().reset_index()
-leaderboard.columns = ['Video Title', 'Unique Views']
-leaderboard = leaderboard.sort_values(by='Unique Views', ascending=False).reset_index(drop=True)
+leaderboard = filtered_df.groupby('title')['count AL'].nunique().reset_index()
+leaderboard.columns = ['Title', 'Learners']
+leaderboard = leaderboard.sort_values(by='Learners', ascending=False).reset_index(drop=True)
 
 # Select only the top 10 most-watched videos
 leaderboard = leaderboard.head(10)
@@ -74,7 +71,7 @@ leaderboard = leaderboard.head(10)
 leaderboard['Rank'] = leaderboard.index + 1
 
 # Rearrange columns to show rank first
-leaderboard = leaderboard[['Rank', 'Video Title', 'Unique Views']]
+leaderboard = leaderboard[['Rank', 'Title', 'Learners']]
 
 # Display the leaderboard table without index
 st.table(leaderboard.set_index('Rank'))
