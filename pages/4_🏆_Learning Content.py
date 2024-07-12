@@ -75,3 +75,8 @@ leaderboard = leaderboard[['Rank', 'Title', 'Learners']]
 
 # Display the leaderboard table without index
 st.table(leaderboard.set_index('Rank'))
+
+if st.button("Reload Data"):
+    # Clear values from *all* all in-memory and on-disk data caches:
+    st.cache_resource.clear()
+    st.cache_data.clear()

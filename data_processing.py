@@ -1,16 +1,18 @@
 import streamlit as st
 import pandas as pd
-from fetch_data import fetch_data_mykg, fetch_data_id, fetch_data_discovery, fetch_data_sap
+from fetch_data import fetch_data_mykg, fetch_data_id, fetch_data_discovery, fetch_data_capture, fetch_data_offplatform, fetch_data_sap
 
 @st.cache_data
 def finalize_data():
-    # Fetch data from both MyKG, ID, and Discovery databases
+    # Fetch data from both MyKG, ID, Discovery, Capture databases
     df_mykg = fetch_data_mykg()
     df_id = fetch_data_id()
     df_discovery = fetch_data_discovery()
+    df_capture = fetch_data_capture()
+    df_offplatform = fetch_data_offplatform()
 
-    # Combine the data from both MyKG and Discovery databases
-    df_combined_mysql = pd.concat([df_mykg, df_id, df_discovery], ignore_index=True)
+    # Combine the data from both MyKG, ID, Discovery, Capture databases
+    df_combined_mysql = pd.concat([df_mykg, df_id, df_discovery, df_capture, df_offplatform], ignore_index=True)
 
     # Define the columns to be selected from the SAP Google Sheet
     selected_columns = ['email', 'nik', 'unit', 'subunit', 'layer', 'division', 'position']  # Adjust as needed
@@ -43,6 +45,13 @@ def finalize_data():
         # Return email if neither lookup succeeds
         return row['email']
 
+    # Convert last_update to timestamp then extract the date
+    if 'last_updated' in df_combined_mysql.columns:
+        df_combined_mysql['last_updated'] = pd.to_datetime(df_combined_mysql['last_updated'], errors='coerce').dt.date
+
+    # Filter out rows where 'last_updated' is NaT
+    df_combined_mysql = df_combined_mysql.dropna(subset=['last_updated'])
+
     # Apply the lookup function to each row
     df_combined_mysql['count AL'] = df_combined_mysql.apply(lookup_nik, axis=1)
 
@@ -57,10 +66,6 @@ def finalize_data():
 
     # Drop the _merge column as it's no longer needed
     merged_df.drop(columns=['_merge'], inplace=True)
-    
-    # Convert last_update to timestamp then extract the date
-    if 'last_updated' in merged_df.columns:
-        merged_df['last_updated'] = pd.to_datetime(merged_df['last_updated'], errors='coerce').dt.date
 
     # Return the dataframes
     return merged_df, df_combined_mysql, df_sap

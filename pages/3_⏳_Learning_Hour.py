@@ -16,9 +16,38 @@ st.logo('kognisi_logo.png')
 # Fetch the data
 merged_df, df_combined_mysql, df_sap = finalize_data()
 
-# Define the dynamic target learning hours based on the current month
-current_month = datetime.now().month
-target_hours = current_month    # Target is 1 hour per month
+# Set the title that appears at the top of the page
+st.markdown('''
+            # :hourglass: Learning Hours
+            
+            This page provides insights into how many employees achieved the target learning hours per unit.
+            ''')
+
+# Create date filter for last_updated
+min_value = df_combined_mysql['last_updated'].min()
+max_value = df_combined_mysql['last_updated'].max()
+
+from_date, to_date = st.date_input(
+    'Choose a periode of date',
+    min_value=min_value,
+    max_value=max_value,
+    value=[min_value, max_value],
+    format="YYYY-MM-DD"
+)
+
+# Filter the data based on the selected date range
+df_combined_mysql = df_combined_mysql[
+    (df_combined_mysql['last_updated'] <= to_date) & (df_combined_mysql['last_updated'] >= from_date)
+]
+
+# Calculate the number of months in the selected date range
+def calculate_months(start_date, end_date):
+    return (end_date.year - start_date.year) * 12 + end_date.month - start_date.month + 1
+
+months_in_range = calculate_months(pd.to_datetime(from_date), pd.to_datetime(to_date))
+
+# Define the dynamic target learning hours based on the selected date range
+target_hours = months_in_range  # Target is 1 hour per month
 
 # Convert duration from seconds to hours
 df_combined_mysql['duration_hours'] = df_combined_mysql['duration'] / 3600
@@ -29,6 +58,12 @@ learning_hours.columns = ['count AL', 'total_hours']
 
 # Determine whether each employee achieved the target
 learning_hours['achieved_target'] = learning_hours['total_hours'] >= target_hours
+
+# Merge with SAP data to get unit information
+learning_hours = pd.merge(learning_hours, df_sap, left_on='count AL', right_on='nik', how='left')
+
+# Exclude rows with N/A in the unit column
+learning_hours = learning_hours[learning_hours['unit'].notna()]
 
 # Sidebar: Add a selectbox for unit filter
 st.sidebar.markdown('### Unit Filter')
@@ -43,9 +78,7 @@ breakdown_variable = st.sidebar.selectbox('Select Breakdown Variable:', ['unit',
 if selected_unit != 'All':
     df_sap = df_sap[df_sap['unit'] == selected_unit]
     merged_df = merged_df[merged_df['unit'] == selected_unit]
-
-# Merge with SAP data to get unit information
-learning_hours = pd.merge(learning_hours, df_sap, left_on='count AL', right_on='nik', how='left')
+    learning_hours = learning_hours[learning_hours['unit'] == selected_unit]
 
 # Aggregate data by unit
 unit_achievement = learning_hours.pivot_table(
@@ -62,7 +95,7 @@ if False not in unit_achievement.columns:
     unit_achievement[False] = 0
 
 # Rename columns
-unit_achievement.columns = [breakdown_variable] + ['Not Achieved', 'Achieved']
+unit_achievement.columns = [breakdown_variable] + ['Not Achieved', 'Achieved']  # Renaming False then True (alphabetically)
 
 # Calculate total employees per breakdown_variable from SAP data
 total_sap = df_sap.groupby(breakdown_variable)['nik'].nunique().reset_index()
@@ -75,21 +108,21 @@ unit_achievement = pd.merge(unit_achievement, total_sap, on=breakdown_variable, 
 unit_achievement['Passive Learners'] = unit_achievement['Total SAP'] - unit_achievement['Not Achieved'] - unit_achievement['Achieved']
 
 # Normalize counts for 100% stacked bar chart
-unit_achievement['Not Achieved (%)'] = (unit_achievement['Not Achieved'] / unit_achievement['Total SAP']) * 100
 unit_achievement['Achieved (%)'] = (unit_achievement['Achieved'] / unit_achievement['Total SAP']) * 100
+unit_achievement['Not Achieved (%)'] = (unit_achievement['Not Achieved'] / unit_achievement['Total SAP']) * 100
 unit_achievement['Passive Learners (%)'] = (unit_achievement ['Passive Learners'] / unit_achievement['Total SAP']) * 100
 
 # Transform data for Altair
 melted_counts = unit_achievement.melt(
     id_vars=breakdown_variable,
-    value_vars=['Not Achieved', 'Achieved', 'Passive Learners'],
+    value_vars=['Achieved', 'Not Achieved', 'Passive Learners'],
     var_name='Achievement',
     value_name='Count'
 )
 
 melted_percentage = unit_achievement.melt(
     id_vars=breakdown_variable,
-    value_vars=['Not Achieved (%)', 'Achieved (%)', 'Passive Learners (%)'],
+    value_vars=['Achieved (%)', 'Not Achieved (%)', 'Passive Learners (%)'],
     var_name='Achievement',
     value_name='Percent'
 )
@@ -97,36 +130,31 @@ melted_percentage = unit_achievement.melt(
 # Combine counts and percentage into a single DataFrame
 melted_counts['Percent'] = melted_percentage['Percent']
 
-print(melted_counts)
-
-# Set the title that appears at the top of the page
-st.markdown('''
-            # :hourglass: Learning Hours
-            
-            This page provides insights into how many employees achieved the target learning hours per unit.
-            ''')
-
 # Display unit_achievement
 st.write('## Disclaimer:')
-st.markdown(f'The target learning hours for this month ({datetime.now().strftime("%B")}) is {target_hours} hour(s) per employee.')
+st.markdown(f'The target learning hours from {from_date.strftime("%B %Y")} to {to_date.strftime("%B %Y")} is {target_hours} hour(s) per employee.')
 
 # Calculate summary statistics
 total_employees = df_sap['nik'].nunique()
 achieved_employees = learning_hours[learning_hours['achieved_target']]['count AL'].nunique()
 percent_achieved = (achieved_employees / total_employees) * 100
+average_hours = learning_hours['total_hours'].mean()
 
 st.write('## Summary:')
 st.markdown(f'- **Total Employees**: {total_employees}')
 st.markdown(f'- **Employees Achieved Target**: {achieved_employees} ({percent_achieved:.2f}%)')
+st.markdown(f'- **Avg. Hours per Employee**: {average_hours:.1f}')
+
 
 # Display the calculated data as a horizontal 100% stacked bar chart
 st.header(f'Learning Hours Achievement by {breakdown_variable.capitalize()}', divider='gray')
 
 # Create the 100% stacked bar chart
 chart = alt.Chart(melted_counts).mark_bar().encode(
-    y=alt.Y(f'{breakdown_variable}:N', sort='-x', axis=alt.Axis(title=breakdown_variable.capitalize())),
+    y=alt.Y(f'{breakdown_variable}:N', sort=None, axis=alt.Axis(title=breakdown_variable.capitalize())),
     x=alt.X('Percent:Q', axis=alt.Axis(title='Percentage'), scale=alt.Scale(domain=[0, 100])),
-    color=alt.Color('Achievement:N', scale=alt.Scale(domain=['Not Achieved', 'Achieved', 'Passive Learners'], range=['#ff7f0e', '#1f77b4', '#808080'])),
+    color=alt.Color('Achievement:N', scale=alt.Scale(domain=['Achieved', 'Not Achieved', 'Passive Learners'], range=['#1f77b4', '#ff7f0e', '#808080'])),
+    order=alt.Order('Achievement:N', sort='ascending'),    # Ensure active is plotted first    
     tooltip=[
         alt.Tooltip(f'{breakdown_variable}:N', title=breakdown_variable.capitalize()),
         alt.Tooltip('Achievement:N', title='Achievement'),
@@ -139,3 +167,8 @@ chart = alt.Chart(melted_counts).mark_bar().encode(
 
 # Display the chart using Streamlit
 st.altair_chart(chart, use_container_width=True)
+
+if st.button("Reload Data"):
+    # Clear values from *all* all in-memory and on-disk data caches:
+    st.cache_resource.clear()
+    st.cache_data.clear()

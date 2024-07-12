@@ -117,6 +117,32 @@ def fetch_data_discovery():
         st.error(f"An error occurred while fetching data from Discovery: {e}")
         return pd.DataFrame()
 
+# Function to fetch data from Capture data
+@st.cache_resource
+def fetch_data_capture():
+    secret_info = st.secrets["json_sap"]    #  Using the same service account as SAP
+    scope = ["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/auth/drive"]
+    creds = ServiceAccountCredentials.from_json_keyfile_dict(secret_info, scope)
+    client = gspread.authorize(creds)
+    spreadsheet = client.open('0. Data Capture - Monthly Updated')
+    sheet = spreadsheet.sheet1
+    data = sheet.get_all_records()
+    df = pd.DataFrame(data)
+    return df
+
+# Function to fetch data from OutsidePlatform data
+@st.cache_resource
+def fetch_data_offplatform():
+    secret_info = st.secrets["json_sap"]    #  Using the same service account as SAP
+    scope = ["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/auth/drive"]
+    creds = ServiceAccountCredentials.from_json_keyfile_dict(secret_info, scope)
+    client = gspread.authorize(creds)
+    spreadsheet = client.open('0. Data Outside Platform')
+    sheet = spreadsheet.sheet1
+    data = sheet.get_all_records()
+    df = pd.DataFrame(data)
+    return df
+
 # Function to fetch data from SAP with selected columns
 @st.cache_resource
 def fetch_data_sap(selected_columns):

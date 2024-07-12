@@ -33,7 +33,7 @@ st.markdown('''
 # Active Learners section
 st.header('Active Learners', divider='gray')
 
-# Create date filter for end_date
+# Create date filter for last_updated
 min_value = merged_df['last_updated'].min()
 max_value = merged_df['last_updated'].max()
 
@@ -98,3 +98,8 @@ st.markdown('''
 # Exponential Learners section
 st.header('Exponential Learners', divider='gray')
 st.markdown('''Work in Progress''')
+
+if st.button("Reload Data"):
+    # Clear values from *all* all in-memory and on-disk data caches:
+    st.cache_resource.clear()
+    st.cache_data.clear()

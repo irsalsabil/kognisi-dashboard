@@ -100,7 +100,7 @@ st.header(f'Learning Adoption by {breakdown_variable.capitalize()}', divider='gr
 base = alt.Chart(melted_counts).mark_bar().encode(
     x=alt.X(f'{breakdown_variable}:N', sort='-y', axis=alt.Axis(title=breakdown_variable.capitalize())),
     y=alt.Y('Percent:Q', axis=alt.Axis(title='Learning Adoption (%)'), scale=alt.Scale(domain=[0, 100])),
-    color=alt.Color('Learner Type:N', scale=alt.Scale(domain=['Active Learners', 'Passive Learners'], range=['#ff7f0e', '#1f77b4'])),
+    color=alt.Color('Learner Type:N', scale=alt.Scale(domain=['Active Learners', 'Passive Learners'], range=['#1f77b4', '#ff7f0e'])),
     order=alt.Order('Learner Type:N', sort='ascending'),    # Ensure active is plotted first
     tooltip=[
         alt.Tooltip(f'{breakdown_variable}:N', title=breakdown_variable.capitalize()),
@@ -131,3 +131,8 @@ combo_chart = alt.layer(base, line).resolve_scale(
 
 # Display the chart using Streamlit
 st.altair_chart(combo_chart, use_container_width=True)
+
+if st.button("Reload Data"):
+    # Clear values from *all* all in-memory and on-disk data caches:
+    st.cache_resource.clear()
+    st.cache_data.clear()

@@ -2,7 +2,7 @@ SELECT
 	u.email, 
 	u.full_name AS 'name', 
 	'-' AS 'nik',
-	CONCAT (c.title, '-', cs.title, '-', cc.title) AS 'title', 
+	CONCAT (c.title, '-', COALESCE(cs.title, ''), '-', COALESCE(cc.title, '')) AS 'title', 
 	cup.updated_at AS 'last_updated',
 	ROUND (cup.progress_duration, 0) AS 'duration',
 	'Course' AS 'type', 
