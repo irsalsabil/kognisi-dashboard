@@ -2,7 +2,7 @@ import streamlit as st
 import pandas as pd
 import altair as alt
 from data_processing import finalize_data
-from datetime import datetime
+import datetime
 
 # Set the tilte and favicon for the Browser's tab bar
 st.set_page_config(
@@ -14,7 +14,7 @@ st.set_page_config(
 st.logo('kognisi_logo.png')
 
 # Fetch the data
-merged_df, df_combined_mysql, df_sap = finalize_data()
+merged_df, df_combined_mysql, df_sap, right_merged_df = finalize_data()
 
 # Set the title that appears at the top of the page
 st.markdown('''
@@ -23,15 +23,70 @@ st.markdown('''
             This page provides insights into how many employees achieved the target learning hours per unit.
             ''')
 
+# Sidebar: Add a selectbox for unit filter
+st.sidebar.markdown('### Unit Filter')
+unit_list = ['All'] + list(df_sap['unit'].unique())
+selected_unit = st.sidebar.selectbox('Select Unit:', unit_list)
+
+if selected_unit != 'All':
+    df_sap = df_sap[df_sap['unit'] == selected_unit]
+    merged_df = merged_df[merged_df['unit'] == selected_unit]
+
+subunit_list = list(df_sap['subunit'].unique())
+selected_subunit = st.sidebar.multiselect('Select Subunit:', subunit_list, default=[])
+
+if selected_subunit:
+    df_sap = df_sap[df_sap['subunit'].isin(selected_subunit)]
+    merged_df = merged_df[merged_df['subunit'].isin(selected_subunit)]
+
+adminhr_list = list(df_sap['admin_hr'].unique())
+selected_adminhr = st.sidebar.multiselect('Select Admin for HR:', adminhr_list, default=[])
+
+if selected_adminhr:
+    df_sap = df_sap[df_sap['admin_hr'].isin(selected_adminhr)]
+    merged_df = merged_df[merged_df['admin_hr'].isin(selected_adminhr)]
+
+# Sidebar: Add a selectbox for breakdown variable
+st.sidebar.markdown ('### Breakdown Variable')
+breakdown_variable = st.sidebar.selectbox('Select Breakdown Variable:', ['unit', 'subunit', 'admin_hr', 'layer', 'generation', 'gender', 'division', 'department'])
+
 # Create date filter for last_updated
 min_value = df_combined_mysql['last_updated'].min()
 max_value = df_combined_mysql['last_updated'].max()
 
+# Default date range
+from_date = min_value
+to_date = max_value
+
+# Create columns for buttons
+st.write("**Choose the data period:**")
+col1, col2, col3 = st.columns(3)
+
+# Create buttons for shortcut filters in a single line
+with col1:
+    if st.button('Lifetime'):
+        from_date = min_value
+        to_date = max_value
+
+with col2:
+    if st.button('This Year'):
+        current_year = datetime.datetime.now().year
+        from_date = datetime.date(current_year, 1, 1)
+        to_date = datetime.datetime.now().date()
+
+with col3:
+    if st.button('This Month'):
+        current_year = datetime.datetime.now().year
+        current_month = datetime.datetime.now().month
+        from_date = datetime.date(current_year, current_month, 1)
+        to_date = datetime.datetime.now().date()
+
+# Allow manual date input as well
 from_date, to_date = st.date_input(
-    'Choose a periode of date',
+    '**Or pick the date manually:**',
+    value=[from_date, to_date],
     min_value=min_value,
     max_value=max_value,
-    value=[min_value, max_value],
     format="YYYY-MM-DD"
 )
 
@@ -64,21 +119,6 @@ learning_hours = pd.merge(learning_hours, df_sap, left_on='count AL', right_on='
 
 # Exclude rows with N/A in the unit column
 learning_hours = learning_hours[learning_hours['unit'].notna()]
-
-# Sidebar: Add a selectbox for unit filter
-st.sidebar.markdown('### Unit Filter')
-unit_list = ['All'] + list(df_sap['unit'].unique())
-selected_unit = st.sidebar.selectbox('Select Unit:', unit_list)
-
-# Sidebar: Add a selectbox for breakdown variable
-st.sidebar.markdown ('### Breakdown Variable')
-breakdown_variable = st.sidebar.selectbox('Select Breakdown Variable:', ['unit', 'subunit', 'layer', 'division', 'position'])
-
-# Apply unit filter id a specific unit is selected
-if selected_unit != 'All':
-    df_sap = df_sap[df_sap['unit'] == selected_unit]
-    merged_df = merged_df[merged_df['unit'] == selected_unit]
-    learning_hours = learning_hours[learning_hours['unit'] == selected_unit]
 
 # Aggregate data by unit
 unit_achievement = learning_hours.pivot_table(

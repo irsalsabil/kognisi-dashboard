@@ -13,64 +13,54 @@ st.set_page_config(
 st.logo('kognisi_logo.png')
 
 # Fetch the data
-merged_df, df_combined_mysql, df_sap = finalize_data()
+merged_df, df_combined_mysql, df_sap, right_merged_df = finalize_data()
 
 # Sidebar: Add a selectbox for unit filter
 st.sidebar.markdown('### Unit Filter')
-unit_list = ['All'] + list(df_sap['unit'].unique())
+unit_list = ['All'] + list(right_merged_df['unit'].unique())
 selected_unit = st.sidebar.selectbox('Select Unit:', unit_list)
+
+if selected_unit != 'All':
+    right_merged_df = right_merged_df[right_merged_df['unit'] == selected_unit]
+
+subunit_list = list(right_merged_df['subunit'].unique())
+selected_subunit = st.sidebar.multiselect('Select Subunit:', subunit_list, default=[])
+
+if selected_subunit:
+    right_merged_df = right_merged_df[right_merged_df['subunit'].isin(selected_subunit)]
+
+adminhr_list = list(right_merged_df['admin_hr'].unique())
+selected_adminhr = st.sidebar.multiselect('Select Admin for HR:', adminhr_list, default=[])
+
+if selected_adminhr:
+    right_merged_df = right_merged_df[right_merged_df['admin_hr'].isin(selected_adminhr)]
 
 # Sidebar: Add a selectbox for breakdown variable
 st.sidebar.markdown ('### Breakdown Variable')
-breakdown_variable = st.sidebar.selectbox('Select Breakdown Variable:', ['unit', 'subunit', 'layer', 'division', 'position'])
+breakdown_variable = st.sidebar.selectbox('Select Breakdown Variable:', ['unit', 'subunit', 'admin_hr', 'layer', 'generation', 'gender', 'division', 'department'])
 
-# Apply unit filter id a specific unit is selected
-if selected_unit != 'All':
-    df_sap = df_sap[df_sap['unit'] == selected_unit]
-    merged_df = merged_df[merged_df['unit'] == selected_unit]
+# Sidebar: Add a selectbox for platform filter
+#st.sidebar.markdown ('### Platform Filter')
+#platform_list = list(right_merged_df['platform'].unique())
+#selected_platform = st.sidebar.multiselect('Select Platform:', platform_list, default=[])
 
-# Calculate Active Learners
-active_learners = merged_df[merged_df['status'] == 'Internal']
-active_counts = active_learners.groupby(breakdown_variable)['count AL'].nunique().reset_index()
-active_counts.columns = [breakdown_variable, 'Active Learners']
+#if selected_platform:
+#    right_merged_df = right_merged_df[right_merged_df['platform'].isin(selected_platform)]
 
-# Calculate Passive Learners
-# Group df_sap by the selected breakdown variable and count unique 'nik'
-all_nik_in_sap = df_sap.groupby(breakdown_variable)['nik'].nunique().reset_index()
-all_nik_in_sap.columns = [breakdown_variable, 'all_nik_count']
+# Create pivot table
+final_counts = right_merged_df.pivot_table(index=breakdown_variable, columns='status', values='nik_y', aggfunc='nunique', fill_value=0).reset_index()
 
-# Merge to get passive counts by the selected breakdown variable
-passive_counts = pd.merge(all_nik_in_sap, active_counts, on=breakdown_variable, how='left').fillna(0)
-passive_counts['Passive Learners'] = passive_counts['all_nik_count'] - passive_counts['Active Learners']
-passive_counts.drop(columns=['all_nik_count', 'Active Learners'], inplace=True)
+# Ensure both 'Active Learners' and 'Passive Learners' columns exist
+if 'Active' not in final_counts:
+    final_counts['Active'] = 0
+if 'Passive' not in final_counts:
+    final_counts['Passive'] = 0
 
-# Merge the counts to have a complete dataset for the chart
-final_counts = pd.merge(active_counts, passive_counts, on=breakdown_variable, how= 'outer').fillna(0)
+final_counts.columns = [breakdown_variable, 'Active Learners', 'Passive Learners']
 
-# Normalize counts for 100% stacked bar chart
+# Calculate Active Learners (%) and Passive Learners (%)
 final_counts['Active Learners (%)'] = final_counts['Active Learners'] / (final_counts['Active Learners'] + final_counts['Passive Learners']) * 100
 final_counts['Passive Learners (%)'] = final_counts['Passive Learners'] / (final_counts['Active Learners'] + final_counts['Passive Learners']) * 100
-
-# Sort units based on the total learners
-#final_counts = final_counts.sort_values(by=breakdown_variable, ascending=False)
-
-# Transform data for Altair
-melted_counts = final_counts.melt(
-    id_vars=breakdown_variable,
-    value_vars=['Active Learners', 'Passive Learners'],
-    var_name='Learner Type',
-    value_name='Count'
-)
-
-melted_percentage = final_counts.melt(
-    id_vars=breakdown_variable,
-    value_vars=['Active Learners (%)', 'Passive Learners (%)'],
-    var_name='Learner Type',
-    value_name='Percent'
-)
-
-# Combine counts and percentage into a single DataFrame
-melted_counts['Percent'] = melted_percentage['Percent']
 
 # Set the title that appears at the top of the page.
 st.markdown('''
@@ -95,6 +85,24 @@ col3.metric("Learning Adoption", f"{overall_adoption:.2f}%")
 
 # Display the calculated percentage as a bar chart
 st.header(f'Learning Adoption by {breakdown_variable.capitalize()}', divider='gray')
+
+# Transform data for Altair
+melted_counts = final_counts.melt(
+    id_vars=breakdown_variable,
+    value_vars=['Active Learners', 'Passive Learners'],
+    var_name='Learner Type',
+    value_name='Count'
+)
+
+melted_percentage = final_counts.melt(
+    id_vars=breakdown_variable,
+    value_vars=['Active Learners (%)', 'Passive Learners (%)'],
+    var_name='Learner Type',
+    value_name='Percent'
+)
+
+# Combine counts and percentage into a single DataFrame
+melted_counts['Percent'] = melted_percentage['Percent']
 
 # Create the base chart with Active and Passive Learners
 base = alt.Chart(melted_counts).mark_bar().encode(
@@ -131,6 +139,25 @@ combo_chart = alt.layer(base, line).resolve_scale(
 
 # Display the chart using Streamlit
 st.altair_chart(combo_chart, use_container_width=True)
+
+# Display the raw data
+st.header('Raw Data', divider='gray')
+
+# Define the columns to drop from df_combined_mysql
+columns_to_drop = ['email_x', 'name', 'nik_x', 'title', 'last_updated', 'duration', 'type', 'platform', 'count AL']  # replace with actual columns to drop
+unique_sap_rows = right_merged_df.drop(columns=columns_to_drop, errors='ignore').drop_duplicates()
+
+# Section for Active Learners
+with st.expander("Active Learners"):
+    active_learners = unique_sap_rows[unique_sap_rows['status'] == 'Active']
+    active_learners.index = range(1, len(active_learners) + 1)
+    st.dataframe(active_learners)
+
+# Section for Passive Learners
+with st.expander("Passive Learners"):
+    passive_learners = unique_sap_rows[unique_sap_rows['status'] == 'Passive']
+    passive_learners.index = range(1, len(passive_learners) + 1)
+    st.dataframe(passive_learners)
 
 if st.button("Reload Data"):
     # Clear values from *all* all in-memory and on-disk data caches:

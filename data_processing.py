@@ -15,7 +15,7 @@ def finalize_data():
     df_combined_mysql = pd.concat([df_mykg, df_id, df_discovery, df_capture, df_offplatform], ignore_index=True)
 
     # Define the columns to be selected from the SAP Google Sheet
-    selected_columns = ['email', 'nik', 'unit', 'subunit', 'layer', 'division', 'position']  # Adjust as needed
+    selected_columns = ['name_sap','email', 'nik', 'unit', 'subunit', 'admin_hr', 'layer', 'generation', 'gender', 'division', 'department']  # Adjust as needed
 
     # Fetch data from SAP with selected columns
     df_sap = fetch_data_sap(selected_columns)
@@ -58,7 +58,7 @@ def finalize_data():
     # Ensure the 'count AL' column is string
     df_combined_mysql['count AL'] = df_combined_mysql['count AL'].astype(str)
 
-    # Merge data from combined MySQL and SAP based on 'count AL' and 'email'
+    # Merge data from combined MySQL and SAP based on 'count AL' and 'nik'
     merged_df = pd.merge(df_combined_mysql, df_sap, left_on='count AL', right_on='nik', how='left', indicator=True)
 
     # Add a new column to label each row as 'internal' or 'external'
@@ -67,5 +67,14 @@ def finalize_data():
     # Drop the _merge column as it's no longer needed
     merged_df.drop(columns=['_merge'], inplace=True)
 
+    # Perform a right join to include all rows from df_sap
+    right_merged_df = pd.merge(df_combined_mysql, df_sap, left_on='count AL', right_on='nik', how='right', indicator=True)
+
+    # Add a new column to label each row as 'Active' or 'Passive'
+    right_merged_df['status'] = right_merged_df['_merge'].apply(lambda x: 'Active' if x == 'both' else 'Passive')
+
+    # Drop the _merge column as it's no longer needed
+    right_merged_df.drop(columns=['_merge'], inplace=True)
+
     # Return the dataframes
-    return merged_df, df_combined_mysql, df_sap
+    return merged_df, df_combined_mysql, df_sap, right_merged_df

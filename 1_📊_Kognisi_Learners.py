@@ -2,6 +2,7 @@ import pandas as pd
 import streamlit as st
 import altair as alt
 from data_processing import finalize_data
+import datetime
 
 # Set the title and favicon that appear in the Browser's tab bar.
 st.set_page_config(
@@ -10,7 +11,7 @@ st.set_page_config(
 )
 
 # Return data from data_processing
-merged_df, df_combined_mysql, df_sap = finalize_data()
+merged_df, df_combined_mysql, df_sap, right_merged_df = finalize_data()
 
 # Add logo and title above sidebar
 st.logo('kognisi_logo.png')
@@ -30,18 +31,51 @@ st.markdown('''
 
 ''')
 
-# Active Learners section
-st.header('Active Learners', divider='gray')
+# Sidebar: Add a selectbox for unit filter
+#st.sidebar.markdown('### Learner Filter')
+#learner_list = ['All'] + list(merged_df['status'].unique())
+#selected_learner = st.sidebar.selectbox('Select Learner:', learner_list)
+
+#if selected_learner != 'All':
+#    merged_df = merged_df[merged_df['status'] == selected_learner]
 
 # Create date filter for last_updated
 min_value = merged_df['last_updated'].min()
 max_value = merged_df['last_updated'].max()
 
+# Default date range
+from_date = min_value
+to_date = max_value
+
+# Create columns for buttons
+st.write("**Choose the data period:**")
+col1, col2, col3 = st.columns(3)
+
+# Create buttons for shortcut filters in a single line
+with col1:
+    if st.button('Lifetime'):
+        from_date = min_value
+        to_date = max_value
+
+with col2:
+    if st.button('This Year'):
+        current_year = datetime.datetime.now().year
+        from_date = datetime.date(current_year, 1, 1)
+        to_date = datetime.datetime.now().date()
+
+with col3:
+    if st.button('This Month'):
+        current_year = datetime.datetime.now().year
+        current_month = datetime.datetime.now().month
+        from_date = datetime.date(current_year, current_month, 1)
+        to_date = datetime.datetime.now().date()
+
+# Allow manual date input as well
 from_date, to_date = st.date_input(
-    'Choose a periode of date',
+    '**Or pick the date manually:**',
+    value=[from_date, to_date],
     min_value=min_value,
     max_value=max_value,
-    value=[min_value, max_value],
     format="YYYY-MM-DD"
 )
 
@@ -49,6 +83,9 @@ from_date, to_date = st.date_input(
 filtered_df = merged_df[
     (merged_df['last_updated'] <= to_date) & (merged_df['last_updated'] >= from_date)
 ]
+
+# Active Learners section
+st.header('Active Learners', divider='gray')
 
 # Calculate the distinct counts of the count AL column
 total_count = filtered_df['count AL'].nunique()
@@ -64,16 +101,16 @@ col3.metric("External", external_count)
 # Platform Distribution
 st.subheader('Platform Distribution', divider='gray')
 
-# Group by platform and count unique count ALs
-platform_counts = filtered_df.groupby('platform')['count AL'].nunique().reset_index()
-platform_counts.columns = ['platform', 'unique_count AL_count']
+# Group by platform and status, and count unique count ALs
+platform_counts = filtered_df.groupby(['platform', 'status'])['count AL'].nunique().reset_index()
+platform_counts.columns = ['platform', 'status', 'learners']
 
-# Create Altair bar chart
-# st.title('Platform Distribution based on Unique count ALs')
+# Create Altair bar chart with internal and external status
 chart = alt.Chart(platform_counts).mark_bar().encode(
     x=alt.X('platform', sort='-y', axis=alt.Axis(title='Platform')),
-    y=alt.Y('unique_count AL_count', axis=alt.Axis(title='Active Learners')),
-    tooltip=['platform', 'unique_count AL_count']
+    y=alt.Y('learners', axis=alt.Axis(title='Active Learners')),
+    color=alt.Color('status', scale=alt.Scale(domain=['Internal', 'External'], range=['#1f77b4', '#ff7f0e'])),
+    tooltip=['platform', 'status', 'learners']
 ).properties(
     width=alt.Step(80)  # Adjust width as needed
 )

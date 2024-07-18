@@ -6,3 +6,5 @@ sshtunnel
 gspread
 oauth2client
 paramiko
+datetime
+toml
