@@ -156,3 +156,15 @@ def fetch_data_sap(selected_columns):
     df = pd.DataFrame(data)
     return df[selected_columns]
 
+# Function to fetch data from Collaborative & Exponential
+@st.cache_resource
+def fetch_data_clel():
+    secret_info = st.secrets["json_sap"]
+    scope = ["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/auth/drive"]
+    creds = ServiceAccountCredentials.from_json_keyfile_dict(secret_info, scope)
+    client = gspread.authorize(creds)
+    spreadsheet = client.open('0. Collaborative & Exponential Learners - Monthly Updated')
+    sheet = spreadsheet.sheet1
+    data = sheet.get_all_records()
+    df = pd.DataFrame(data)
+    return df

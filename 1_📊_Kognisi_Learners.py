@@ -1,7 +1,7 @@
 import pandas as pd
 import streamlit as st
 import altair as alt
-from data_processing import finalize_data
+from data_processing import finalize_data, finalize_data_clel
 import datetime
 
 # Set the title and favicon that appear in the Browser's tab bar.
@@ -12,6 +12,7 @@ st.set_page_config(
 
 # Return data from data_processing
 merged_df, df_combined_mysql, df_sap, right_merged_df = finalize_data()
+df_clel = finalize_data_clel()
 
 # Add logo and title above sidebar
 st.logo('kognisi_logo.png')
@@ -21,9 +22,9 @@ st.markdown('''
 # :bar_chart: Kognisi Learners
 
 Under the term Kognisi Learners, there are several metrics, including:
-1. Active Learners: users who have accessed at least one content in one platform
-2. Collaborative Learners: active learners who also teach at least one learning content
-3. Exponential Learner: active learners who teach more than one learning content
+1. **Active Learners:** users who have accessed at least one content in one platform
+2. **Collaborative Learners:** active learners who also teach at least one learning content
+3. **Exponential Learner:** active learners who teach more than one learning content
 ''')
 
 # Add some spacing
@@ -123,20 +124,60 @@ st.markdown('''
 
 ''')
 
-# Collaborative Learners section
-st.header('Collaborative Learners', divider='gray')
-st.markdown('''Work in Progress''')
+# Collaborative & Exponential Learners section
+st.header('Collaborative & Exponential Learners Trend 2024', divider='gray')
 
-# Add some spacing
+# Identify columns to keep: id_instructor and columns starting with 'EL/CL'
+columns_to_keep = ['id_instructor'] + [col for col in df_clel.columns if col.startswith('EL/CL')]
+df_clel = df_clel[columns_to_keep]
+
+# Melt the DataFrame to long format
+df_melted = df_clel.melt(id_vars=['id_instructor'], var_name='month', value_name='value')
+
+# Rename the month columns to be more readable
+df_melted['month'] = df_melted['month'].str.replace('EL/CL ', '')
+
+# Count unique IDs for each value per month
+count_data = df_melted.groupby(['month', 'value']).agg({'id_instructor': pd.Series.nunique}).reset_index()
+count_data.rename(columns={'id_instructor': 'unique_count'}, inplace=True)
+
+# Filter only EL and CL values
+count_data = count_data[count_data['value'].isin(['EL', 'CL'])]
+
+# Define a list of months in order
+standard_months = ['JANUARY', 'FEBRUARY', 'MARCH', 'APRIL', 'MAY', 'JUNE', 'JULY', 'AUGUST', 'SEPTEMBER', 'OCTOBER', 'NOVEMBER', 'DECEMBER']
+
+# Identify months present in the data
+present_months = count_data['month'].unique()
+
+# Combine standard months with any new months found in the data
+month_order = [month for month in standard_months if month in present_months] + \
+              [month for month in present_months if month not in standard_months]
+
+# Ensure the month is categorical and in the specified order
+count_data['month'] = pd.Categorical(count_data['month'], categories=month_order, ordered=True)
+count_data = count_data.sort_values(by='month')
+
+# Create the chart using Altair
+chart = alt.Chart(count_data).mark_bar().encode(
+    x=alt.X('month', sort=None, axis=alt.Axis(title='Month')),
+    y=alt.Y('unique_count', axis=alt.Axis(title='Count')),
+    color=alt.Color('value:N', scale=alt.Scale(domain=['CL', 'EL'], range=['#ADD8E6', '#40E0D0'])),  # Light Blue and Turquoise Green
+    order=alt.Order('value:N', sort='ascending'),
+    tooltip=['month', 'value', 'unique_count']
+).properties(
+    width=alt.Step(80)  # Adjust width as needed
+)
+
+st.altair_chart(chart, use_container_width=True)
+
+
+# Update Data
+st.divider()
 st.markdown('''
-
+_This app is using data cache for performance optimization, you can reload the data by clicking the button below then press 'R' on keyboard or refresh the page._
 ''')
-
-# Exponential Learners section
-st.header('Exponential Learners', divider='gray')
-st.markdown('''Work in Progress''')
-
-if st.button("Reload Data"):
+if st.button("Update Data"):
     # Clear values from *all* all in-memory and on-disk data caches:
     st.cache_resource.clear()
     st.cache_data.clear()

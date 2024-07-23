@@ -141,25 +141,33 @@ combo_chart = alt.layer(base, line).resolve_scale(
 st.altair_chart(combo_chart, use_container_width=True)
 
 # Display the raw data
-st.header('Raw Data', divider='gray')
+st.header('Download Data', divider='gray')
 
 # Define the columns to drop from df_combined_mysql
 columns_to_drop = ['email_x', 'name', 'nik_x', 'title', 'last_updated', 'duration', 'type', 'platform', 'count AL']  # replace with actual columns to drop
 unique_sap_rows = right_merged_df.drop(columns=columns_to_drop, errors='ignore').drop_duplicates()
 
-# Section for Active Learners
+# Filter and index once
+active_learners = unique_sap_rows[unique_sap_rows['status'] == 'Active'].reset_index(drop=True)
+passive_learners = unique_sap_rows[unique_sap_rows['status'] == 'Passive'].reset_index(drop=True)
+
+# Add indices for display
+active_learners.index += 1
+passive_learners.index += 1
+
+# Display data
 with st.expander("Active Learners"):
-    active_learners = unique_sap_rows[unique_sap_rows['status'] == 'Active']
-    active_learners.index = range(1, len(active_learners) + 1)
     st.dataframe(active_learners)
 
-# Section for Passive Learners
 with st.expander("Passive Learners"):
-    passive_learners = unique_sap_rows[unique_sap_rows['status'] == 'Passive']
-    passive_learners.index = range(1, len(passive_learners) + 1)
     st.dataframe(passive_learners)
 
-if st.button("Reload Data"):
+# Update Data
+st.divider()
+st.markdown('''
+_This app is using data cache for performance optimization, you can reload the data by clicking the button below then press 'R' on keyboard or refresh the page._
+''')
+if st.button("Update Data"):
     # Clear values from *all* all in-memory and on-disk data caches:
     st.cache_resource.clear()
     st.cache_data.clear()

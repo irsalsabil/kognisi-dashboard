@@ -95,7 +95,12 @@ leaderboard = leaderboard[['Rank', 'Title', 'Learners']]
 # Display the leaderboard table without index
 st.table(leaderboard.set_index('Rank'))
 
-if st.button("Reload Data"):
+# Update Data
+st.divider()
+st.markdown('''
+_This app is using data cache for performance optimization, you can reload the data by clicking the button below then press 'R' on keyboard or refresh the page._
+''')
+if st.button("Update Data"):
     # Clear values from *all* all in-memory and on-disk data caches:
     st.cache_resource.clear()
     st.cache_data.clear()

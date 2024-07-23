@@ -1,6 +1,6 @@
 import streamlit as st
 import pandas as pd
-from fetch_data import fetch_data_mykg, fetch_data_id, fetch_data_discovery, fetch_data_capture, fetch_data_offplatform, fetch_data_sap
+from fetch_data import fetch_data_mykg, fetch_data_id, fetch_data_discovery, fetch_data_capture, fetch_data_offplatform, fetch_data_sap, fetch_data_clel
 
 @st.cache_data
 def finalize_data():
@@ -78,3 +78,12 @@ def finalize_data():
 
     # Return the dataframes
     return merged_df, df_combined_mysql, df_sap, right_merged_df
+
+@st.cache_data
+def finalize_data_clel():
+
+    # Fetch data from CL EL
+    df_clel = fetch_data_clel()
+
+    # Return the dataframes
+    return df_clel
