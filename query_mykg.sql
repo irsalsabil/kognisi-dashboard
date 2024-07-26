@@ -1,12 +1,13 @@
 SELECT *
 FROM (
+    -- First part: Aggregating duration and using only cp.title
     SELECT 
         u.email, 
         u.name,
         u.nik,
-        CONCAT(cp.title, '-', COALESCE(cs.title,''), '-', COALESCE(cm.title,'')) AS 'title', 
-        cmu.updated_at AS 'last_updated',
-        cmu.progress_duration AS 'duration',
+        cp.title AS 'title',  -- Use only cp.title
+        MAX(cmu.updated_at) AS 'last_updated',  -- Get the latest update date
+        SUM(cmu.progress_duration) AS 'duration',  -- Sum up the duration
         'Course' AS 'type', 
         'Kognisi MyKG' AS 'platform'
     FROM course_material_users cmu
@@ -24,19 +25,22 @@ FROM (
     WHERE 
         u.name NOT IN ('SISDMv2','SEMOGA LAST TEST','Testing aja','TEST')
         AND cm.deleted_at IS NULL
-    
+        AND cp.title NOT IN ('Kursus Contoh')
+    GROUP BY u.email, u.name, u.nik, cp.title  -- Group by necessary fields
+
     UNION ALL
     
-    SELECT DISTINCT
+    -- Second part: Using only c.title and summing up the duration
+    SELECT 
         u.email, 
         u.name, 
         u.nik,
-        CONCAT(c.title, '-', COALESCE(cs.name, ''), '-', COALESCE(cs2.name, '')) AS 'title',
-        cu.updated_at AS 'last_updated',
-        CASE 
-			WHEN c.type = 1 THEN cu.progress_duration
-			WHEN c.type = 2 THEN TIME_TO_SEC(TIMEDIFF(cs2.end_time, cs2.start_time)) 
-		END AS duration,
+        c.title AS 'title',  -- Use only c.title
+        MAX(cu.updated_at) AS 'last_updated',
+        SUM(CASE 
+            WHEN c.type = 1 THEN cu.progress_duration
+            WHEN c.type = 2 THEN TIME_TO_SEC(TIMEDIFF(cs2.end_time, cs2.start_time)) 
+        END) AS duration,  -- Sum up the duration
         CASE WHEN c.type = 1 THEN 'Video'
             WHEN c.type = 2 THEN 'Inclass' END AS 'type',
         'Kognisi MyKG' AS 'platform'
@@ -44,12 +48,13 @@ FROM (
         JOIN users u ON cu.user_id = u.id 
         JOIN courses c ON cu.course_id = c.id
         LEFT JOIN course_schedules cs ON cs.course_id = c.id 
-		LEFT JOIN course_sessions cs2 ON cs2.course_schedule_id = cs.id 
-        LEFT JOIN course_instructors ci ON c.id = ci.course_id
+        LEFT JOIN course_sessions cs2 ON cs2.course_schedule_id = cs.id 
+        LEFT JOIN course_instructors ci ON c.id = ci.course_id AND cs2.id = ci.course_session_id 
     WHERE 
         u.name NOT IN ('SISDMv2','SEMOGA LAST TEST','Testing aja','TEST')
         AND ci.deleted_at IS NULL
         AND c.deleted_at IS NULL
+    GROUP BY u.email, u.name, u.nik, c.title, c.type  -- Group by necessary fields
 ) AS combined_results
 ORDER BY
-	last_updated DESC
+    last_updated DESC

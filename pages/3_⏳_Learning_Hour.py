@@ -46,9 +46,15 @@ breakdown_variable = st.sidebar.selectbox('Select Breakdown Variable:',
 min_value = df_combined_mysql['last_updated'].min()
 max_value = df_combined_mysql['last_updated'].max()
 
+# Initialize session state for date filters if not already present
+if 'from_date' not in st.session_state:
+    st.session_state.from_date = min_value
+if 'to_date' not in st.session_state:
+    st.session_state.to_date = max_value
+
 # Default date range
-from_date = min_value
-to_date = max_value
+from_date = st.session_state.from_date
+to_date = st.session_state.to_date
 
 # Create columns for buttons
 st.write("**Choose the data period:**")
@@ -59,12 +65,16 @@ with col1:
     if st.button('Lifetime'):
         from_date = min_value
         to_date = max_value
+        st.session_state.from_date = from_date
+        st.session_state.to_date = to_date
 
 with col2:
     if st.button('This Year'):
         current_year = datetime.datetime.now().year
         from_date = datetime.date(current_year, 1, 1)
         to_date = datetime.datetime.now().date()
+        st.session_state.from_date = from_date
+        st.session_state.to_date = to_date
 
 with col3:
     if st.button('This Month'):
@@ -72,6 +82,8 @@ with col3:
         current_month = datetime.datetime.now().month
         from_date = datetime.date(current_year, current_month, 1)
         to_date = datetime.datetime.now().date()
+        st.session_state.from_date = from_date
+        st.session_state.to_date = to_date
 
 # Allow manual date input as well
 from_date, to_date = st.date_input(
@@ -81,6 +93,10 @@ from_date, to_date = st.date_input(
     max_value=max_value,
     format="YYYY-MM-DD"
 )
+
+# Update session state with manually picked dates
+st.session_state.from_date = from_date
+st.session_state.to_date = to_date
 
 # Filter the data based on the selected date range
 df_combined_mysql = df_combined_mysql[
@@ -99,6 +115,7 @@ learning_hours = pd.merge(df_combined_mysql, df_sap, left_on='count AL', right_o
 
 # Convert duration from seconds to hours and sum the duration hours
 learning_hours['duration_hours'] = learning_hours['duration'] / 3600
+learning_hours['duration_hours'] = learning_hours['duration_hours'].astype(float)
 learning_hours['total_hours'] = learning_hours.groupby('count AL')['duration_hours'].transform('sum')
 
 # Determine whether each employee achieved the target
@@ -138,17 +155,23 @@ melted_counts['Percent'] = melted_percentage['Percent']
 st.write('## Disclaimer:')
 st.markdown(f'The target learning hours from {from_date.strftime("%B %Y")} to {to_date.strftime("%B %Y")} is {target_hours} hour(s) per employee.')
 
+# Calculate unique learning hours per 'nik_y'
+unique_learning_hours = learning_hours.drop_duplicates(subset=['nik_y'])
+
 # Calculate summary statistics
 total_employees = df_sap['nik'].nunique()
 achieved_employees = unit_achievement['Achieved'].sum()
 percent_achieved = (achieved_employees / total_employees) * 100
-average_hours = learning_hours['total_hours'].mean()
+
+# Calculate average hours per active employee (with total_hours >= 0) and per all employees based on unique 'nik_y'
+average_hours_active = unique_learning_hours[unique_learning_hours['total_hours'] >= 0]['total_hours'].mean()
+average_hours_all = unique_learning_hours['total_hours'].sum() / total_employees
 
 st.write('## Summary:')
 st.markdown(f'- **Total Employees**: {total_employees}')
 st.markdown(f'- **Employees Achieved Target**: {achieved_employees} ({percent_achieved:.2f}%)')
-st.markdown(f'- **Avg. Hours per Employee**: {average_hours:.1f}')
-
+st.markdown(f'- **Avg. Hours per Active Employee**: {average_hours_active:.1f}')
+st.markdown(f'- **Avg. Hours per All Employee**: {average_hours_all:.1f}')
 
 # Display the calculated data as a horizontal 100% stacked bar chart
 st.header(f'Learning Hours Achievement by {breakdown_variable.capitalize()}', divider='gray')

@@ -39,14 +39,6 @@ if selected_adminhr:
 st.sidebar.markdown ('### Breakdown Variable')
 breakdown_variable = st.sidebar.selectbox('Select Breakdown Variable:', ['unit', 'subunit', 'admin_hr', 'layer', 'generation', 'gender', 'division', 'department'])
 
-# Sidebar: Add a selectbox for platform filter
-#st.sidebar.markdown ('### Platform Filter')
-#platform_list = list(right_merged_df['platform'].unique())
-#selected_platform = st.sidebar.multiselect('Select Platform:', platform_list, default=[])
-
-#if selected_platform:
-#    right_merged_df = right_merged_df[right_merged_df['platform'].isin(selected_platform)]
-
 # Create pivot table
 final_counts = right_merged_df.pivot_table(index=breakdown_variable, columns='status', values='nik_y', aggfunc='nunique', fill_value=0).reset_index()
 
