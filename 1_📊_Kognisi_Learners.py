@@ -2,8 +2,8 @@ import pandas as pd
 import streamlit as st
 import altair as alt
 from data_processing import finalize_data, finalize_data_clel
-import datetime
 import os
+from datetime import datetime
 
 # Set the title and favicon that appear in the Browser's tab bar.
 st.set_page_config(
