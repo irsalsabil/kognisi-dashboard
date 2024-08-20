@@ -13,12 +13,6 @@ st.set_page_config(
     page_icon=':bar_chart:',  # This is an emoji shortcode. Could be a URL too.
 )
 
-# Set the title and favicon that appear in the Browser's tab bar.
-st.set_page_config(
-    page_title='Kognisi Learners',
-    page_icon=':bar_chart:',  # This is an emoji shortcode. Could be a URL too.
-)
-
 # Function to log user access to Google Sheets
 def log_user_access(email):
     access_time = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
