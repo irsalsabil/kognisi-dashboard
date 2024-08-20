@@ -15,7 +15,7 @@ st.logo('kognisi_logo.png')
 merged_df, df_combined_mysql, df_sap, right_merged_df = finalize_data()
 
 # Filter the DataFrame for 'Active' status and sort by 'last_updated' descending
-merged_df = merged_df.sort_values(by='last_updated', ascending=False)
+#merged_df = merged_df.sort_values(by='last_updated', ascending=False)
 
 # Create date filter for last_updated
 min_value = merged_df['last_updated'].min()
@@ -109,6 +109,9 @@ selected_nik = st.sidebar.multiselect('Select NIK:', nik_list, default=[])
 
 if selected_nik:
     merged_df = merged_df[merged_df['nik_y'].isin(selected_nik)]
+
+# Process merged_df
+merged_df.drop(['name_sap', 'email_y'], axis=1, inplace=True)
 
 # Display the raw data
 st.header('Raw Data', divider='gray')

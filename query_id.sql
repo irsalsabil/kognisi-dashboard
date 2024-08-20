@@ -1,7 +1,7 @@
 SELECT 
     u.email, 
     u.full_name AS 'name', 
-    '-' AS 'nik',
+    '000000' AS 'nik',
     c.title AS 'title',  -- Use only c.title
     MAX(cup.updated_at) AS 'last_updated',  -- Get the latest update date
     SUM(ROUND(cup.progress_duration, 0)) AS 'duration',  -- Sum up the duration
