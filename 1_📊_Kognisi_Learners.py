@@ -3,12 +3,32 @@ import streamlit as st
 import altair as alt
 from data_processing import finalize_data, finalize_data_clel
 import datetime
+import os
 
 # Set the title and favicon that appear in the Browser's tab bar.
 st.set_page_config(
     page_title='Kognisi Learners',
     page_icon=':bar_chart:',  # This is an emoji shortcode. Could be a URL too.
 )
+
+# Function to log user access
+def log_user_access(email):
+    access_time = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+    log_entry = f"{email} accessed the app at {access_time}\n"
+    
+    # Write the log entry to a text file
+    with open("user_access_log.txt", "a") as log_file:
+        log_file.write(log_entry)
+
+# Get the user's email from the environment
+user_email = os.getenv('USER_EMAIL')
+
+# Log access if email is detected
+if user_email:
+    log_user_access(user_email)
+    st.write(f"Welcome, {user_email}!")
+else:
+    st.write("No email detected. Are you sure you are signed in?")
 
 # Return data from data_processing
 merged_df, df_combined_mysql, df_sap, right_merged_df = finalize_data()
@@ -128,7 +148,7 @@ st.markdown('''
 st.header('Collaborative & Exponential Learners Trend 2024', divider='gray')
 
 # Identify columns to keep: id_instructor and columns starting with 'EL/CL'
-columns_to_keep = ['id_instructor'] + [col for col in df_clel.columns if col.startswith('EL/CL')]
+columns_to_keep = ['id_instructor', 'instructor_name', 'title', 'type', 'platform', 'unit'] + [col for col in df_clel.columns if col.startswith('EL/CL')]
 df_clel = df_clel[columns_to_keep]
 
 # Melt the DataFrame to long format
@@ -171,6 +191,22 @@ chart = alt.Chart(count_data).mark_bar().encode(
 
 st.altair_chart(chart, use_container_width=True)
 
+# View Data
+st.markdown('#### View Data')
+
+# Get unique values for name and title columns
+unique_df = df_clel[['instructor_name', 'unit', 'title', 'type', 'platform']].drop_duplicates()
+
+# Filter unit
+unit_list = ['All'] + list(unique_df['unit'].unique())
+selected_unit = st.selectbox('Select Unit:', unit_list)
+
+if selected_unit != 'All':
+    unique_df = unique_df[unique_df['unit'] == selected_unit]
+
+# Display data
+with st.expander("Collaborative & Exponential Learners"):
+    st.dataframe(unique_df)
 
 # Update Data
 st.divider()

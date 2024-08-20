@@ -35,6 +35,12 @@ selected_adminhr = st.sidebar.multiselect('Select Admin for HR:', adminhr_list, 
 if selected_adminhr:
     right_merged_df = right_merged_df[right_merged_df['admin_hr'].isin(selected_adminhr)]
 
+division_list = list(right_merged_df['division'].unique())
+selected_division = st.sidebar.multiselect('Select Division:', division_list, default=[])
+
+if selected_division:
+    right_merged_df = right_merged_df[right_merged_df['division'].isin(selected_division)]    
+
 # Sidebar: Add a selectbox for breakdown variable
 st.sidebar.markdown ('### Breakdown Variable')
 breakdown_variable = st.sidebar.selectbox('Select Breakdown Variable:', ['unit', 'subunit', 'admin_hr', 'layer', 'generation', 'gender', 'division', 'department'])

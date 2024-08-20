@@ -9,7 +9,7 @@ from oauth2client.service_account import ServiceAccountCredentials
 import toml
 
 # Function to connect to MyKG via SSH tunnel and fetch data
-@st.cache_resource
+@st.cache_resource(ttl=86400)
 def fetch_data_mykg():
     try:
         # Load the private key content from secrets
@@ -50,7 +50,7 @@ def fetch_data_mykg():
         return pd.DataFrame()
 
 # Function to connect to ID via SSH tunnel and fetch data
-@st.cache_resource
+@st.cache_resource(ttl=86400)
 def fetch_data_id():
     try:
         # Load the private key content from secrets for ID
@@ -91,7 +91,7 @@ def fetch_data_id():
         return pd.DataFrame()
 
 # Function to connect to Discovery directly and fetch data
-@st.cache_resource
+@st.cache_resource(ttl=86400)
 def fetch_data_discovery():
     try:
         connection_kwargs = {
@@ -118,7 +118,7 @@ def fetch_data_discovery():
         return pd.DataFrame()
 
 # Function to fetch data from Capture data
-@st.cache_resource
+@st.cache_resource(ttl=86400)
 def fetch_data_capture():
     secret_info = st.secrets["json_sap"]    #  Using the same service account as SAP
     scope = ["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/auth/drive"]
@@ -131,7 +131,7 @@ def fetch_data_capture():
     return df
 
 # Function to fetch data from OutsidePlatform data
-@st.cache_resource
+@st.cache_resource(ttl=86400)
 def fetch_data_offplatform():
     secret_info = st.secrets["json_sap"]    #  Using the same service account as SAP
     scope = ["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/auth/drive"]
@@ -144,7 +144,7 @@ def fetch_data_offplatform():
     return df
 
 # Function to fetch data from SAP with selected columns
-@st.cache_resource
+@st.cache_resource(ttl=86400)
 def fetch_data_sap(selected_columns):
     secret_info = st.secrets["json_sap"]
     scope = ["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/auth/drive"]
@@ -157,7 +157,7 @@ def fetch_data_sap(selected_columns):
     return df[selected_columns]
 
 # Function to fetch data from Collaborative & Exponential
-@st.cache_resource
+@st.cache_resource(ttl=86400)
 def fetch_data_clel():
     secret_info = st.secrets["json_sap"]
     scope = ["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/auth/drive"]

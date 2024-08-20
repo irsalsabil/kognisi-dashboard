@@ -37,6 +37,10 @@ selected_adminhr = st.sidebar.multiselect('Select Admin for HR:', list(df_sap['a
 if selected_adminhr:
     df_sap = df_sap[df_sap['admin_hr'].isin(selected_adminhr)]
 
+selected_division = st.sidebar.multiselect('Select Division:', list(df_sap['division'].unique()), default=[])
+if selected_division:
+    df_sap = df_sap[df_sap['division'].isin(selected_division)]
+
 # Sidebar: Breakdown variable
 st.sidebar.markdown('### Breakdown Variable')
 breakdown_variable = st.sidebar.selectbox('Select Breakdown Variable:', 
@@ -108,7 +112,17 @@ def calculate_months(start_date, end_date):
     return (end_date.year - start_date.year) * 12 + end_date.month - start_date.month + 1
 
 months_in_range = calculate_months(pd.to_datetime(from_date), pd.to_datetime(to_date))
-target_hours = months_in_range
+#target_hours = months_in_range
+
+# Dictionary to store target multipliers for each unit
+unit_targets = {
+    'GOMAN': 0.5,
+    # Add more units and their multipliers as needed
+}
+
+# Function to get target hours based on unit
+def get_target_hours(unit, months_in_range):
+    return unit_targets.get(unit, 1) * months_in_range  # Default to 1 if unit not found
 
 # Merge with SAP data
 learning_hours = pd.merge(df_combined_mysql, df_sap, left_on='count AL', right_on='nik', how='right')
@@ -118,10 +132,13 @@ learning_hours['duration_hours'] = learning_hours['duration'] / 3600
 learning_hours['duration_hours'] = learning_hours['duration_hours'].astype(float)
 learning_hours['total_hours'] = learning_hours.groupby('count AL')['duration_hours'].transform('sum')
 
+# Calculate target hours for each employee based on their unit
+learning_hours['target_hours'] = learning_hours['unit'].apply(lambda x: get_target_hours(x, months_in_range))
+
 # Determine whether each employee achieved the target
 learning_hours['achieved_target'] = np.where(
     learning_hours['total_hours'].isna(), 'Inactive',
-    np.where(learning_hours['total_hours'] >= target_hours, 'Achieved', 'Not Achieved')
+    np.where(learning_hours['total_hours'] >= learning_hours['target_hours'], 'Achieved', 'Not Achieved')
 )
 
 # Aggregate data by unit
@@ -152,8 +169,8 @@ melted_percentage = unit_achievement.melt(
 melted_counts['Percent'] = melted_percentage['Percent']
 
 # Display unit_achievement
-st.write('## Disclaimer:')
-st.markdown(f'The target learning hours from {from_date.strftime("%B %Y")} to {to_date.strftime("%B %Y")} is {target_hours} hour(s) per employee.')
+#st.write('## Disclaimer:')
+#st.markdown(f'The target learning hours from {from_date.strftime("%B %Y")} to {to_date.strftime("%B %Y")} is {target_hours} hour(s) per employee.')
 
 # Calculate unique learning hours per 'nik_y'
 unique_learning_hours = learning_hours.drop_duplicates(subset=['nik_y'])
@@ -196,7 +213,7 @@ chart = alt.Chart(melted_counts).mark_bar().encode(
 st.altair_chart(chart, use_container_width=True)
 
 # Display the raw data
-st.header('Raw Data', divider='gray')
+st.header('Download Data', divider='gray')
 
 # Define the columns to drop from df_combined_mysql
 columns_drop = ['email_x', 'name', 'nik_x', 'title', 'last_updated', 'duration', 'type', 'platform', 'count AL', 'duration_hours']  # replace with actual columns to drop

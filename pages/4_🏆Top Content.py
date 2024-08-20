@@ -37,6 +37,13 @@ if selected_adminhr:
     df_sap = df_sap[df_sap['admin_hr'].isin(selected_adminhr)]
     merged_df = merged_df[merged_df['admin_hr'].isin(selected_adminhr)]
 
+division_list = list(df_sap['division'].unique())
+selected_division = st.sidebar.multiselect('Select Division:', adminhr_list, default=[])
+
+if selected_division:
+    df_sap = df_sap[df_sap['division'].isin(selected_division)]
+    merged_df = merged_df[merged_df['division'].isin(selected_division)]
+
 # Sidebar: Add a selectbox for type filter
 st.sidebar.markdown('### Content Filter')
 platform_list = ['All'] + list(merged_df['platform'].unique())  # Replace 'type' with the actual column name
@@ -64,12 +71,39 @@ This page shows the leaderboard of 10 learning contents with most learners.
 min_value = merged_df['last_updated'].min()
 max_value = merged_df['last_updated'].max()
 
-# Add a date input widget to filter the date range
+# Default date range
+from_date = min_value
+to_date = max_value
+
+# Create columns for buttons
+st.write("**Choose the data period:**")
+col1, col2, col3 = st.columns(3)
+
+# Create buttons for shortcut filters in a single line
+with col1:
+    if st.button('Lifetime'):
+        from_date = min_value
+        to_date = max_value
+
+with col2:
+    if st.button('This Year'):
+        current_year = datetime.datetime.now().year
+        from_date = datetime.date(current_year, 1, 1)
+        to_date = datetime.datetime.now().date()
+
+with col3:
+    if st.button('This Month'):
+        current_year = datetime.datetime.now().year
+        current_month = datetime.datetime.now().month
+        from_date = datetime.date(current_year, current_month, 1)
+        to_date = datetime.datetime.now().date()
+
+# Allow manual date input as well
 from_date, to_date = st.date_input(
-    'Choose a period of date',
+    '**Or pick the date manually:**',
+    value=[from_date, to_date],
     min_value=min_value,
     max_value=max_value,
-    value=[min_value, max_value],
     format="YYYY-MM-DD"
 )
 
