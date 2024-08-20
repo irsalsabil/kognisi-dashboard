@@ -1,20 +1,23 @@
 import streamlit as st
 import pandas as pd
-from fetch_data import fetch_data_mykg, fetch_data_id, fetch_data_discovery, fetch_data_capture, fetch_data_offplatform, fetch_data_sap, fetch_data_clel
+from fetch_data import fetch_data_mykg, fetch_data_mykg_i, fetch_data_id, fetch_data_discovery, fetch_data_capture, fetch_data_offplatform, fetch_data_sap, fetch_data_clel
 
-@st.cache_data
+@st.cache_data(ttl=86400)
 def fetch_combined_data():
     # Combine data from multiple sources in a single function
     df_mykg = fetch_data_mykg()
+    df_mykg_i = fetch_data_mykg_i()
     df_id = fetch_data_id()
     df_discovery = fetch_data_discovery()
     df_capture = fetch_data_capture()
     df_offplatform = fetch_data_offplatform()
-    df_combined_mysql = pd.concat([df_mykg, df_id, df_discovery, df_capture, df_offplatform], ignore_index=True)
+    df_combined_mysql = pd.concat([df_mykg, df_mykg_i, df_id, df_discovery, df_capture, df_offplatform], ignore_index=True)
 
     # Clean email and nik columns efficiently
     df_combined_mysql['email'] = df_combined_mysql['email'].str.strip().str.lower()
-    df_combined_mysql['nik'] = df_combined_mysql['nik'].astype(str).str.zfill(6)
+    #df_combined_mysql['nik'] = df_combined_mysql['nik'].astype(str).str.zfill(6)
+    df_combined_mysql['nik'] = df_combined_mysql['nik'].astype(str)
+    df_combined_mysql['nik'] = df_combined_mysql['nik'].str.replace('.0', '', regex=False).str.zfill(6)
 
     return df_combined_mysql
 
@@ -36,7 +39,7 @@ def lookup_nik(df_combined_mysql, df_sap):
 
     return df_combined_mysql['count AL']
 
-@st.cache_data
+@st.cache_data(ttl=86400)
 def finalize_data():
     # Fetch combined data from MySQL sources
     df_combined_mysql = fetch_combined_data()
@@ -66,7 +69,7 @@ def finalize_data():
 
     return merged_df, df_combined_mysql, df_sap, right_merged_df
 
-@st.cache_data
+@st.cache_data(ttl=86400)
 def finalize_data_clel():
     # Fetch data from CL EL
     df_clel = fetch_data_clel()

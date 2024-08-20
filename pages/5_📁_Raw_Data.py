@@ -97,15 +97,31 @@ if selected_title:
     merged_df = merged_df[merged_df['title'].isin(selected_title)]
 
 # Sidebar: Add a selectbox for title filter
-st.sidebar.markdown('### Employee Filter')
+st.sidebar.markdown('### Learner Filter')
 name_list = list(merged_df['name'].unique())
 selected_name = st.sidebar.multiselect('Select Name:', name_list, default=[])
 
 if selected_name:
     merged_df = merged_df[merged_df['name'].isin(selected_name)]
 
+nik_list = list(merged_df['nik_y'].unique())
+selected_nik = st.sidebar.multiselect('Select NIK:', nik_list, default=[])
+
+if selected_nik:
+    merged_df = merged_df[merged_df['nik_y'].isin(selected_nik)]
+
 # Display the raw data
 st.header('Raw Data', divider='gray')
 
 # Display dataframe
 st.dataframe(merged_df)
+
+# Update Data
+st.divider()
+st.markdown('''
+_This app is using data cache for performance optimization, you can reload the data by clicking the button below then press 'R' on keyboard or refresh the page._
+''')
+if st.button("Update Data"):
+    # Clear values from *all* all in-memory and on-disk data caches:
+    st.cache_resource.clear()
+    st.cache_data.clear()

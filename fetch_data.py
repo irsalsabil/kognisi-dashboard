@@ -49,6 +49,47 @@ def fetch_data_mykg():
         st.error(f"An error occurred while fetching data from MyKG: {e}")
         return pd.DataFrame()
 
+# Function to connect to MyKG via SSH tunnel and fetch data (INSTRUCTOR)
+@st.cache_resource(ttl=86400)
+def fetch_data_mykg_i():
+    try:
+        # Load the private key content from secrets
+        private_key_content = st.secrets["key_mykg"]["id_rsa_streamlit"]
+        private_key_passphrase = st.secrets["ssh_mykg"].get("private_key_passphrase")
+        
+        # Create an RSA key object from the private key content
+        private_key_file = StringIO(private_key_content)
+        private_key = paramiko.RSAKey.from_private_key(private_key_file, password=private_key_passphrase)
+        
+        with SSHTunnelForwarder(
+            (st.secrets["ssh_mykg"]["host"], st.secrets["ssh_mykg"]["port"]),
+            ssh_username=st.secrets["ssh_mykg"]["username"],
+            ssh_pkey=private_key,
+            remote_bind_address=(st.secrets["mykg"]["host"], st.secrets["mykg"]["port"])
+        ) as tunnel:
+            connection_kwargs = {
+                'host': '127.0.0.1',
+                'port': tunnel.local_bind_port if tunnel.is_active else st.secrets["mykg"]["port"],
+                'user': st.secrets["mykg"]["user"],
+                'password': st.secrets["mykg"]["password"],
+                'database': st.secrets["mykg"]["database"],
+                'cursorclass': pymysql.cursors.DictCursor,
+            }
+            conn = pymysql.connect(**connection_kwargs)
+
+            with open('query_mykg_i.sql', 'r') as sql_file:
+                query = sql_file.read()
+
+            cursor = conn.cursor()
+            cursor.execute(query)
+            rows = cursor.fetchall()
+            cursor.close()
+            conn.close()
+            return pd.DataFrame(rows)
+    except Exception as e:
+        st.error(f"An error occurred while fetching data from MyKG: {e}")
+        return pd.DataFrame()
+
 # Function to connect to ID via SSH tunnel and fetch data
 @st.cache_resource(ttl=86400)
 def fetch_data_id():
