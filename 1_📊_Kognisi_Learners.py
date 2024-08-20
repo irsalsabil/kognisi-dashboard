@@ -20,15 +20,17 @@ def log_user_access(email):
     with open("user_access_log.txt", "a") as log_file:
         log_file.write(log_entry)
 
-# Get the user's email from the environment
-user_email = os.getenv('USER_EMAIL')
+# Get the user's email from Streamlit's experimental_user function
+user_info = st.experimental_user
 
-# Log access if email is detected
-if user_email:
+# Check if user_info contains the email and log access
+if user_info is not None and "email" in user_info:
+    user_email = user_info['email']
     log_user_access(user_email)
     st.write(f"Welcome, {user_email}!")
 else:
     st.write("No email detected. Are you sure you are signed in?")
+    st.write("Debug info:", user_info)
 
 # Return data from data_processing
 merged_df, df_combined_mysql, df_sap, right_merged_df = finalize_data()
