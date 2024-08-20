@@ -4,6 +4,8 @@ import altair as alt
 from data_processing import finalize_data, finalize_data_clel
 import os
 from datetime import datetime
+from google.oauth2 import service_account
+import gspread
 
 # Set the title and favicon that appear in the Browser's tab bar.
 st.set_page_config(
@@ -11,14 +13,26 @@ st.set_page_config(
     page_icon=':bar_chart:',  # This is an emoji shortcode. Could be a URL too.
 )
 
-# Function to log user access
+# Set the title and favicon that appear in the Browser's tab bar.
+st.set_page_config(
+    page_title='Kognisi Learners',
+    page_icon=':bar_chart:',  # This is an emoji shortcode. Could be a URL too.
+)
+
+# Function to log user access to Google Sheets
 def log_user_access(email):
     access_time = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-    log_entry = f"{email} accessed the app at {access_time}\n"
     
-    # Write the log entry to a text file
-    with open("user_access_log.txt", "a") as log_file:
-        log_file.write(log_entry)
+    # Setup the Google Sheets client
+    scope = ["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/auth/drive"]
+    creds = ServiceAccountCredentials.from_json_keyfile_dict(st.secrets["json_sap"], scope)
+    client = gspread.authorize(creds)
+    
+    # Open the Google Sheet
+    sheet = client.open("Kognisi Dashboard Access Log").sheet1  # Assuming you want to log in the first sheet
+
+    # Log the data
+    sheet.append_row([email, access_time])
 
 # Get the user's email from Streamlit's experimental_user function
 user_info = st.experimental_user
