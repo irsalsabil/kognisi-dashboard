@@ -104,14 +104,14 @@ selected_name = st.sidebar.multiselect('Select Name:', name_list, default=[])
 if selected_name:
     merged_df = merged_df[merged_df['name'].isin(selected_name)]
 
-nik_list = list(merged_df['nik_y'].unique())
+nik_list = list(merged_df['count AL'].unique())
 selected_nik = st.sidebar.multiselect('Select NIK:', nik_list, default=[])
 
 if selected_nik:
-    merged_df = merged_df[merged_df['nik_y'].isin(selected_nik)]
+    merged_df = merged_df[merged_df['count AL'].isin(selected_nik)]
 
 # Process merged_df
-merged_df.drop(['name_sap', 'email_y'], axis=1, inplace=True)
+merged_df.drop(['name_sap', 'email_y', 'nik_x', 'nik_y', 'layer', 'generation', 'gender', 'department', 'status'], axis=1, inplace=True)
 
 # Display the raw data
 st.header('Raw Data', divider='gray')
