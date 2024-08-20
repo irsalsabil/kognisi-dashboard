@@ -2,11 +2,10 @@ import pandas as pd
 import streamlit as st
 import altair as alt
 from data_processing import finalize_data, finalize_data_clel
-import os
-from datetime import datetime
-from google.oauth2 import service_account
 import gspread
-import toml
+from oauth2client.service_account import ServiceAccountCredentials
+from datetime import datetime
+import os
 
 # Set the title and favicon that appear in the Browser's tab bar.
 st.set_page_config(
