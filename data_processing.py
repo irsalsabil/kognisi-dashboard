@@ -18,6 +18,8 @@ def fetch_combined_data():
     #df_combined_mysql['nik'] = df_combined_mysql['nik'].astype(str).str.zfill(6)
     df_combined_mysql['nik'] = df_combined_mysql['nik'].astype(str)
     df_combined_mysql['nik'] = df_combined_mysql['nik'].str.replace('.0', '', regex=False).str.zfill(6)
+    df_combined_mysql['duration'] = df_combined_mysql['duration'].apply(lambda x: int(float(x)) if pd.notnull(x) else None)
+
 
     return df_combined_mysql
 
