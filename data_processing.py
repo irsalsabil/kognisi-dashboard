@@ -1,5 +1,6 @@
 import streamlit as st
 import pandas as pd
+import numpy as np
 from fetch_data import fetch_data_mykg, fetch_data_mykg_i, fetch_data_id, fetch_data_discovery, fetch_data_capture, fetch_data_offplatform, fetch_data_sap, fetch_data_clel
 
 @st.cache_data(ttl=86400)
@@ -15,11 +16,13 @@ def fetch_combined_data():
 
     # Clean email and nik columns efficiently
     df_combined_mysql['email'] = df_combined_mysql['email'].str.strip().str.lower()
-    #df_combined_mysql['nik'] = df_combined_mysql['nik'].astype(str).str.zfill(6)
-    df_combined_mysql['nik'] = df_combined_mysql['nik'].astype(str)
-    df_combined_mysql['nik'] = df_combined_mysql['nik'].str.replace('.0', '', regex=False).str.zfill(6)
+    df_combined_mysql['nik'] = df_combined_mysql['nik'].astype(str).str.replace('.0', '', regex=False).str.zfill(6)
     df_combined_mysql['duration'] = df_combined_mysql['duration'].apply(lambda x: int(float(x)) if pd.notnull(x) else None)
 
+    # Convert and filter last_updated column
+    if 'last_updated' in df_combined_mysql.columns:
+        df_combined_mysql['last_updated'] = pd.to_datetime(df_combined_mysql['last_updated'], errors='coerce').dt.date
+        df_combined_mysql = df_combined_mysql.dropna(subset=['last_updated'])
 
     return df_combined_mysql
 
@@ -53,16 +56,16 @@ def finalize_data():
 
     # Apply lookup function to each row
     df_combined_mysql['count AL'] = lookup_nik(df_combined_mysql, df_sap).astype(str)
-
-    # Convert and filter last_updated column
-    if 'last_updated' in df_combined_mysql.columns:
-        df_combined_mysql['last_updated'] = pd.to_datetime(df_combined_mysql['last_updated'], errors='coerce').dt.date
-        df_combined_mysql = df_combined_mysql.dropna(subset=['last_updated'])
-
+    
     # Merge combined MySQL data with SAP data
     merged_df = pd.merge(df_combined_mysql, df_sap, left_on='count AL', right_on='nik', how='left', indicator=True)
     merged_df['status'] = merged_df['_merge'].apply(lambda x: 'Internal' if x == 'both' else 'External')
     merged_df.drop(columns=['_merge'], inplace=True)
+    merged_df.drop(columns=[''], inplace=True)
+
+    # Convert specific columns to string
+    columns_to_convert = ['email_x', 'name', 'unit', 'subunit', 'admin_hr', 'division']
+    merged_df[columns_to_convert] = merged_df[columns_to_convert].astype(str)
 
     # Right join to include all rows from df_sap
     right_merged_df = pd.merge(df_combined_mysql, df_sap, left_on='count AL', right_on='nik', how='right', indicator=True)

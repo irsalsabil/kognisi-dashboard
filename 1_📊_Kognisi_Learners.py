@@ -90,16 +90,16 @@ with col1:
 
 with col2:
     if st.button('This Year'):
-        current_year = datetime.datetime.now().year
-        from_date = datetime.date(current_year, 1, 1)
-        to_date = datetime.datetime.now().date()
+        current_year = datetime.now().year
+        from_date = datetime(current_year, 1, 1).date()
+        to_date = datetime.now().date()
 
 with col3:
     if st.button('This Month'):
-        current_year = datetime.datetime.now().year
-        current_month = datetime.datetime.now().month
-        from_date = datetime.date(current_year, current_month, 1)
-        to_date = datetime.datetime.now().date()
+        current_year = datetime.now().year
+        current_month = datetime.now().month
+        from_date = datetime(current_year, current_month, 1).date()
+        to_date = datetime.now().date()
 
 # Allow manual date input as well
 from_date, to_date = st.date_input(
