@@ -1,5 +1,6 @@
 import streamlit as st
 import pandas as pd
+import math
 from data_processing import finalize_data
 
 # Set the title and favicon for the Browser's tab bar.
@@ -113,11 +114,42 @@ if selected_nik:
 # Process merged_df
 merged_df.drop(['name_sap', 'email_y', 'nik_x', 'nik_y', 'layer', 'generation', 'gender', 'department', 'status'], axis=1, inplace=True)
 
+# Pagination
+# Define the number of rows per page
+rows_per_page = 100
+
+# Calculate the total number of pages
+total_rows = len(merged_df)
+total_pages = math.ceil(total_rows / rows_per_page)
+
+# Create a select box for page selection
+page_number = st.selectbox("Page", range(1, total_pages + 1))
+
+# Calculate the starting and ending indices of the rows to display
+start_idx = (page_number - 1) * rows_per_page
+end_idx = start_idx + rows_per_page
+
+# Slice the DataFrame to display only the rows for the current page
+page_data = merged_df.iloc[start_idx:end_idx]
+
+
 # Display the raw data
 st.header('Raw Data', divider='gray')
 
-# Display dataframe
-st.dataframe(merged_df)
+# Display the DataFrame for the current page
+st.dataframe(page_data)
+
+# Download data
+# Convert the DataFrame to CSV
+csv = merged_df.to_csv(index=False)
+
+# Create a download button
+st.download_button(
+    label="Download full data as CSV",
+    data=csv,
+    file_name='full_data.csv',
+    mime='text/csv',
+)
 
 # Update Data
 st.divider()
