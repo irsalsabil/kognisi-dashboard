@@ -62,17 +62,15 @@ st.markdown('''
 
 ''')
 
-# Sidebar: Add a selectbox for unit filter
-#st.sidebar.markdown('### Learner Filter')
-#learner_list = ['All'] + list(merged_df['status'].unique())
-#selected_learner = st.sidebar.selectbox('Select Learner:', learner_list)
-
-#if selected_learner != 'All':
-#    merged_df = merged_df[merged_df['status'] == selected_learner]
-
 # Create date filter for last_updated
 min_value = merged_df['last_updated'].min()
 max_value = merged_df['last_updated'].max()
+
+# Initialize session state for date filters if not already present
+if 'from_date' not in st.session_state:
+    st.session_state.from_date = min_value
+if 'to_date' not in st.session_state:
+    st.session_state.to_date = max_value
 
 # Default date range
 from_date = min_value
@@ -87,12 +85,16 @@ with col1:
     if st.button('Lifetime'):
         from_date = min_value
         to_date = max_value
+        st.session_state.from_date = from_date
+        st.session_state.to_date = to_date
 
 with col2:
     if st.button('This Year'):
         current_year = datetime.now().year
         from_date = datetime(current_year, 1, 1).date()
         to_date = datetime.now().date()
+        st.session_state.from_date = from_date
+        st.session_state.to_date = to_date
 
 with col3:
     if st.button('This Month'):
@@ -100,6 +102,8 @@ with col3:
         current_month = datetime.now().month
         from_date = datetime(current_year, current_month, 1).date()
         to_date = datetime.now().date()
+        st.session_state.from_date = from_date
+        st.session_state.to_date = to_date
 
 # Allow manual date input as well
 from_date, to_date = st.date_input(
@@ -109,6 +113,8 @@ from_date, to_date = st.date_input(
     max_value=max_value,
     format="YYYY-MM-DD"
 )
+st.session_state.from_date = from_date
+st.session_state.to_date = to_date
 
 # Filter the data based on the selected date range
 filtered_df = merged_df[
@@ -213,6 +219,24 @@ selected_unit = st.selectbox('Select Unit:', unit_list)
 
 if selected_unit != 'All':
     unique_df = unique_df[unique_df['unit'] == selected_unit]
+
+# Set the default date range based on the data in another_df
+#min_value_2 = unique_df['last_updated'].min()
+#max_value_2 = unique_df['last_updated'].max()
+
+# Allow manual date input for the second DataFrame
+#from_date_2, to_date_2 = st.date_input(
+#    'Select date:',
+#    value=[min_value_2, max_value_2],
+#    min_value=min_value_2,
+#    max_value=max_value_2,
+#    format="YYYY-MM-DD"
+#)
+
+# Filter the second DataFrame based on the selected date range
+#unique_df = unique_df[
+#    (unique_df['last_updated'] <= to_date_2) & (unique_df['last_updated'] >= from_date_2)
+#]
 
 # Display data
 with st.expander("Collaborative & Exponential Learners"):

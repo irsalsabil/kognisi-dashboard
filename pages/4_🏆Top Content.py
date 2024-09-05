@@ -1,5 +1,6 @@
 import streamlit as st
 import pandas as pd
+import datetime
 from data_processing import finalize_data
 
 # Set the title and favicon for the Browser's tab bar.
@@ -22,6 +23,16 @@ selected_unit = st.sidebar.selectbox('Select Unit:', unit_list)
 if selected_unit != 'All':
     df_sap = df_sap[df_sap['unit'] == selected_unit]
     merged_df = merged_df[merged_df['unit'] == selected_unit]
+
+# If 'GOMAN' is selected, show additional filter for 'Admin GOMAN'
+if selected_unit == 'GOMAN':
+    admin_goman_list = ['All'] + list(df_sap['admin_goman'].unique())
+    selected_admin_goman = st.sidebar.selectbox('Select Admin GOMAN:', admin_goman_list)
+
+    # Filter the DataFrame based on the selected 'Admin GOMAN'
+    if selected_admin_goman != 'All':
+        df_sap = df_sap[df_sap['admin_goman'].isin(selected_admin_goman)]
+        merged_df = merged_df[merged_df['admin_goman'] == selected_admin_goman]
 
 subunit_list = list(df_sap['subunit'].unique())
 selected_subunit = st.sidebar.multiselect('Select Subunit:', subunit_list, default=[])
@@ -71,6 +82,12 @@ This page shows the leaderboard of 10 learning contents with most learners.
 min_value = merged_df['last_updated'].min()
 max_value = merged_df['last_updated'].max()
 
+# Initialize session state for date filters if not already present
+if 'from_date' not in st.session_state:
+    st.session_state.from_date = min_value
+if 'to_date' not in st.session_state:
+    st.session_state.to_date = max_value
+    
 # Default date range
 from_date = min_value
 to_date = max_value
@@ -84,12 +101,16 @@ with col1:
     if st.button('Lifetime'):
         from_date = min_value
         to_date = max_value
+        st.session_state.from_date = from_date
+        st.session_state.to_date = to_date
 
 with col2:
     if st.button('This Year'):
         current_year = datetime.datetime.now().year
         from_date = datetime.date(current_year, 1, 1)
         to_date = datetime.datetime.now().date()
+        st.session_state.from_date = from_date
+        st.session_state.to_date = to_date
 
 with col3:
     if st.button('This Month'):
@@ -97,6 +118,8 @@ with col3:
         current_month = datetime.datetime.now().month
         from_date = datetime.date(current_year, current_month, 1)
         to_date = datetime.datetime.now().date()
+        st.session_state.from_date = from_date
+        st.session_state.to_date = to_date
 
 # Allow manual date input as well
 from_date, to_date = st.date_input(
@@ -106,6 +129,8 @@ from_date, to_date = st.date_input(
     max_value=max_value,
     format="YYYY-MM-DD"
 )
+st.session_state.from_date = from_date
+st.session_state.to_date = to_date
 
 # Filter the data based on the selected date range
 filtered_df = merged_df[

@@ -29,6 +29,15 @@ selected_unit = st.sidebar.selectbox('Select Unit:', unit_list)
 if selected_unit != 'All':
     df_sap = df_sap[df_sap['unit'] == selected_unit]
 
+# If 'GOMAN' is selected, show additional filter for 'Admin GOMAN'
+if selected_unit == 'GOMAN':
+    admin_goman_list = ['All'] + list(df_sap['admin_goman'].unique())
+    selected_admin_goman = st.sidebar.selectbox('Select Admin GOMAN:', admin_goman_list)
+
+    # Filter the DataFrame based on the selected 'Admin GOMAN'
+    if selected_admin_goman != 'All':
+        df_sap = df_sap[df_sap['admin_goman'] == selected_admin_goman]
+
 selected_subunit = st.sidebar.multiselect('Select Subunit:', list(df_sap['subunit'].unique()), default=[])
 if selected_subunit:
     df_sap = df_sap[df_sap['subunit'].isin(selected_subunit)]

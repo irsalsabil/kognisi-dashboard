@@ -23,6 +23,16 @@ selected_unit = st.sidebar.selectbox('Select Unit:', unit_list)
 if selected_unit != 'All':
     right_merged_df = right_merged_df[right_merged_df['unit'] == selected_unit]
 
+# If 'GOMAN' is selected, show additional filter for 'Admin GOMAN'
+if selected_unit == 'GOMAN':
+    admin_goman_list = ['All'] + list(right_merged_df['admin_goman'].unique())
+    selected_admin_goman = st.sidebar.selectbox('Select Admin GOMAN:', admin_goman_list)
+
+    # Filter the DataFrame based on the selected 'Admin GOMAN'
+    if selected_admin_goman != 'All':
+        right_merged_df = right_merged_df[right_merged_df['admin_goman'] == selected_admin_goman]
+
+
 subunit_list = list(right_merged_df['subunit'].unique())
 selected_subunit = st.sidebar.multiselect('Select Subunit:', subunit_list, default=[])
 

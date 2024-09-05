@@ -50,7 +50,7 @@ def finalize_data():
     df_combined_mysql = fetch_combined_data()
 
     # Fetch SAP data with selected columns
-    selected_columns = ['name_sap', 'email', 'nik', 'unit', 'subunit', 'admin_hr', 'layer', 'generation', 'gender', 'division', 'department']
+    selected_columns = ['name_sap', 'email', 'nik', 'unit', 'subunit', 'admin_hr', 'layer', 'generation', 'gender', 'division', 'department', 'admin_goman']
     df_sap = fetch_data_sap(selected_columns)
     df_sap = clean_sap_data(df_sap)
 
