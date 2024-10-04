@@ -45,7 +45,7 @@ def lookup_nik(df_combined_mysql, df_sap):
 
     return df_combined_mysql['count AL']
 
-@st.cache_data()
+@st.cache_data(ttl=86400)
 def finalize_data():
     # Fetch combined data from MySQL sources
     df_combined_mysql = fetch_combined_data()

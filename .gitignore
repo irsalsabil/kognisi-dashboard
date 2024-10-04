@@ -1,1 +1,3 @@
 .streamlit/
+z_new_learners.py
+z_query_mykg_newlearners.sql

@@ -84,40 +84,49 @@ filtered_df = merged_df[
     (merged_df['last_updated'] <= to_date) & (merged_df['last_updated'] >= from_date)
 ]
 
-# Sidebar: Add a selectbox for unit filter
+# Sidebar: Unit filter
 st.sidebar.markdown('### Unit Filter')
-unit_list = ['All'] + list(merged_df['unit'].unique())
+unit_list = ['All'] + list(df_sap['unit'].unique())
 selected_unit = st.sidebar.selectbox('Select Unit:', unit_list)
 
 if selected_unit != 'All':
-    merged_df = merged_df[merged_df['unit'] == selected_unit]
+    df_sap = df_sap[df_sap['unit'] == selected_unit]
+
+penugasan_list = ['All'] + list(df_sap['penugasan'].unique())
+selected_penugasan = st.sidebar.selectbox('Select Penugasan:', penugasan_list)
+
+if selected_penugasan != 'All':
+    df_sap = df_sap[df_sap['penugasan'] == selected_penugasan]
 
 # If 'GOMAN' is selected, show additional filter for 'Admin GOMAN'
 if selected_unit == 'GOMAN':
-    admin_goman_list = ['All'] + list(merged_df['admin_goman'].unique())
+    admin_goman_list = ['All'] + list(df_sap['admin_goman'].unique())
     selected_admin_goman = st.sidebar.selectbox('Select Admin GOMAN:', admin_goman_list)
 
     # Filter the DataFrame based on the selected 'Admin GOMAN'
     if selected_admin_goman != 'All':
-        merged_df = merged_df[merged_df['admin_goman'] == selected_admin_goman]
+        df_sap = df_sap[df_sap['admin_goman'] == selected_admin_goman]
 
-subunit_list = list(merged_df['subunit'].unique())
-selected_subunit = st.sidebar.multiselect('Select Subunit:', subunit_list, default=[])
+# If 'GOMED' is selected, show additional filter for 'Subunit GOMED'
+if selected_unit == 'GOMED':
+    subunit_list = ['All'] + list(df_sap['subunit'].unique())
+    selected_subunit = st.sidebar.selectbox('Select Subunit:', subunit_list)
 
-if selected_subunit:
-    merged_df = merged_df[merged_df['subunit'].isin(selected_subunit)]
+    # Filter the DataFrame based on the selected 'Penugasan GOMED'
+    if selected_subunit != 'All':
+        df_sap = df_sap[df_sap['subunit'] == selected_subunit]
 
-adminhr_list = list(merged_df['admin_hr'].unique())
-selected_adminhr = st.sidebar.multiselect('Select Admin for HR:', adminhr_list, default=[])
-
-if selected_adminhr:
-    merged_df = merged_df[merged_df['admin_hr'].isin(selected_adminhr)]
-
-division_list = list(merged_df['division'].unique())
-selected_division = st.sidebar.multiselect('Select Division:', adminhr_list, default=[])
-
+selected_division = st.sidebar.multiselect('Select Division:', list(df_sap['division'].unique()), default=[])
 if selected_division:
-    merged_df = merged_df[merged_df['division'].isin(selected_division)]
+    df_sap = df_sap[df_sap['division'].isin(selected_division)]
+
+selected_layer = st.sidebar.multiselect('Select Layer:', list(df_sap['layer'].unique()), default=[])
+if selected_division:
+    df_sap = df_sap[df_sap['layer'].isin(selected_division)]
+
+selected_region = st.sidebar.multiselect('Select Region:', list(df_sap['region'].unique()), default=[])
+if selected_region:
+    df_sap = df_sap[df_sap['region'].isin(selected_region)]
 
 # Sidebar: Add a selectbox for title filter
 st.sidebar.markdown('### Title Filter')
