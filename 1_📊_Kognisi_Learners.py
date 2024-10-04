@@ -155,20 +155,17 @@ chart = alt.Chart(platform_counts).mark_bar().encode(
 # Display the chart using Streamlit
 st.altair_chart(chart, use_container_width=True)
 
-# Add some spacing
-st.markdown('''
-
-''')
+st.write('***Internal:** PKWT & PKWTT (Registered in SAP) | **Eksternal:** Non KG, Ex-employee, Freelance, Intern*')
 
 # Collaborative & Exponential Learners section
 st.header('Collaborative & Exponential Learners Trend 2024', divider='gray')
 
 # Identify columns to keep: id_instructor and columns starting with 'EL/CL'
-columns_to_keep = ['id_instructor', 'instructor_name', 'title', 'type', 'platform', 'unit'] + [col for col in df_clel.columns if col.startswith('EL/CL')]
-df_clel = df_clel[columns_to_keep]
+columns_to_keep = ['id_instructor'] + [col for col in df_clel.columns if col.startswith('EL/CL')]
+df_clel_trim = df_clel[columns_to_keep]
 
 # Melt the DataFrame to long format
-df_melted = df_clel.melt(id_vars=['id_instructor'], var_name='month', value_name='value')
+df_melted = df_clel_trim.melt(id_vars=['id_instructor'], var_name='month', value_name='value')
 
 # Rename the month columns to be more readable
 df_melted['month'] = df_melted['month'].str.replace('EL/CL ', '')
@@ -211,7 +208,7 @@ st.altair_chart(chart, use_container_width=True)
 st.markdown('#### View Data')
 
 # Get unique values for name and title columns
-unique_df = df_clel[['instructor_name', 'unit', 'title', 'type', 'platform']].drop_duplicates()
+unique_df = df_clel[['instructor_name', 'last_updated', 'unit', 'title', 'type', 'platform']].drop_duplicates()
 
 # Filter unit
 unit_list = ['All'] + list(unique_df['unit'].unique())
@@ -221,22 +218,22 @@ if selected_unit != 'All':
     unique_df = unique_df[unique_df['unit'] == selected_unit]
 
 # Set the default date range based on the data in another_df
-#min_value_2 = unique_df['last_updated'].min()
-#max_value_2 = unique_df['last_updated'].max()
+min_value_2 = unique_df['last_updated'].min()
+max_value_2 = unique_df['last_updated'].max()
 
 # Allow manual date input for the second DataFrame
-#from_date_2, to_date_2 = st.date_input(
-#    'Select date:',
-#    value=[min_value_2, max_value_2],
-#    min_value=min_value_2,
-#    max_value=max_value_2,
-#    format="YYYY-MM-DD"
-#)
+from_date_2, to_date_2 = st.date_input(
+    'Select date:',
+    value=[min_value_2, max_value_2],
+    min_value=min_value_2,
+    max_value=max_value_2,
+    format="YYYY-MM-DD"
+)
 
 # Filter the second DataFrame based on the selected date range
-#unique_df = unique_df[
-#    (unique_df['last_updated'] <= to_date_2) & (unique_df['last_updated'] >= from_date_2)
-#]
+unique_df = unique_df[
+    (unique_df['last_updated'] <= to_date_2) & (unique_df['last_updated'] >= from_date_2)
+]
 
 # Display data
 with st.expander("Collaborative & Exponential Learners"):

@@ -23,6 +23,12 @@ selected_unit = st.sidebar.selectbox('Select Unit:', unit_list)
 if selected_unit != 'All':
     right_merged_df = right_merged_df[right_merged_df['unit'] == selected_unit]
 
+penugasan_list = ['All'] + list(right_merged_df['penugasan'].unique())
+selected_penugasan = st.sidebar.selectbox('Select Penugasan:', penugasan_list)
+
+if selected_penugasan != 'All':
+    right_merged_df = right_merged_df[right_merged_df['penugasan'] == selected_penugasan]
+
 # If 'GOMAN' is selected, show additional filter for 'Admin GOMAN'
 if selected_unit == 'GOMAN':
     admin_goman_list = ['All'] + list(right_merged_df['admin_goman'].unique())
@@ -32,28 +38,36 @@ if selected_unit == 'GOMAN':
     if selected_admin_goman != 'All':
         right_merged_df = right_merged_df[right_merged_df['admin_goman'] == selected_admin_goman]
 
+# If 'GOMED' is selected, show additional filter for 'Subunit GOMED'
+if selected_unit == 'GOMED':
+    subunit_list = ['All'] + list(right_merged_df['subunit'].unique())
+    selected_subunit = st.sidebar.selectbox('Select Subunit:', subunit_list)
 
-subunit_list = list(right_merged_df['subunit'].unique())
-selected_subunit = st.sidebar.multiselect('Select Subunit:', subunit_list, default=[])
-
-if selected_subunit:
-    right_merged_df = right_merged_df[right_merged_df['subunit'].isin(selected_subunit)]
-
-adminhr_list = list(right_merged_df['admin_hr'].unique())
-selected_adminhr = st.sidebar.multiselect('Select Admin for HR:', adminhr_list, default=[])
-
-if selected_adminhr:
-    right_merged_df = right_merged_df[right_merged_df['admin_hr'].isin(selected_adminhr)]
+    # Filter the DataFrame based on the selected 'Subunit GOMED'
+    if selected_subunit != 'All':
+        right_merged_df = right_merged_df[right_merged_df['subunit'] == selected_subunit]
 
 division_list = list(right_merged_df['division'].unique())
 selected_division = st.sidebar.multiselect('Select Division:', division_list, default=[])
 
 if selected_division:
-    right_merged_df = right_merged_df[right_merged_df['division'].isin(selected_division)]    
+    right_merged_df = right_merged_df[right_merged_df['division'].isin(selected_division)] 
+
+layer_list = list(right_merged_df['layer'].unique())
+selected_layer = st.sidebar.multiselect('Select Layer:', layer_list, default=[])
+
+if selected_layer:
+    right_merged_df = right_merged_df[right_merged_df['layer'].isin(selected_layer)]
+
+region_list = list(right_merged_df['region'].unique())
+selected_region = st.sidebar.multiselect('Select Region:', region_list, default=[])
+
+if selected_region:
+    right_merged_df = right_merged_df[right_merged_df['region'].isin(selected_region)] 
 
 # Sidebar: Add a selectbox for breakdown variable
 st.sidebar.markdown ('### Breakdown Variable')
-breakdown_variable = st.sidebar.selectbox('Select Breakdown Variable:', ['unit', 'subunit', 'admin_hr', 'layer', 'generation', 'gender', 'division', 'department'])
+breakdown_variable = st.sidebar.selectbox('Select Breakdown Variable:', ['unit', 'subunit', 'layer', 'generation', 'gender', 'division', 'department', 'region', 'admin_goman'])
 
 # Create pivot table
 final_counts = right_merged_df.pivot_table(index=breakdown_variable, columns='status', values='nik_y', aggfunc='nunique', fill_value=0).reset_index()

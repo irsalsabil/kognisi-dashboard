@@ -2,6 +2,7 @@ import streamlit as st
 import pandas as pd
 import numpy as np
 from fetch_data import fetch_data_mykg, fetch_data_mykg_i, fetch_data_id, fetch_data_discovery, fetch_data_capture, fetch_data_offplatform, fetch_data_sap, fetch_data_clel
+from datetime import datetime
 
 @st.cache_data(ttl=86400)
 def fetch_combined_data():
@@ -44,13 +45,13 @@ def lookup_nik(df_combined_mysql, df_sap):
 
     return df_combined_mysql['count AL']
 
-@st.cache_data(ttl=86400)
+@st.cache_data()
 def finalize_data():
     # Fetch combined data from MySQL sources
     df_combined_mysql = fetch_combined_data()
 
     # Fetch SAP data with selected columns
-    selected_columns = ['name_sap', 'email', 'nik', 'unit', 'subunit', 'admin_hr', 'layer', 'generation', 'gender', 'division', 'department', 'admin_goman']
+    selected_columns = ['name_sap', 'email', 'nik', 'unit', 'subunit', 'layer', 'generation', 'gender', 'division', 'department', 'region', 'admin_goman', 'penugasan']
     df_sap = fetch_data_sap(selected_columns)
     df_sap = clean_sap_data(df_sap)
 
@@ -64,7 +65,7 @@ def finalize_data():
     merged_df.drop(columns=[''], inplace=True)
 
     # Convert specific columns to string
-    columns_to_convert = ['email_x', 'name', 'unit', 'subunit', 'admin_hr', 'division']
+    columns_to_convert = ['email_x', 'name', 'unit', 'subunit', 'division']
     merged_df[columns_to_convert] = merged_df[columns_to_convert].astype(str)
 
     # Right join to include all rows from df_sap
@@ -78,5 +79,6 @@ def finalize_data():
 def finalize_data_clel():
     # Fetch data from CL EL
     df_clel = fetch_data_clel()
+    df_clel['last_updated'] = pd.to_datetime(df_clel['last_updated'], format="%Y-%m-%d").dt.date
 
     return df_clel

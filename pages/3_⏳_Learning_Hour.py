@@ -29,6 +29,12 @@ selected_unit = st.sidebar.selectbox('Select Unit:', unit_list)
 if selected_unit != 'All':
     df_sap = df_sap[df_sap['unit'] == selected_unit]
 
+penugasan_list = ['All'] + list(df_sap['penugasan'].unique())
+selected_penugasan = st.sidebar.selectbox('Select Penugasan:', penugasan_list)
+
+if selected_penugasan != 'All':
+    df_sap = df_sap[df_sap['penugasan'] == selected_penugasan]
+
 # If 'GOMAN' is selected, show additional filter for 'Admin GOMAN'
 if selected_unit == 'GOMAN':
     admin_goman_list = ['All'] + list(df_sap['admin_goman'].unique())
@@ -38,22 +44,31 @@ if selected_unit == 'GOMAN':
     if selected_admin_goman != 'All':
         df_sap = df_sap[df_sap['admin_goman'] == selected_admin_goman]
 
-selected_subunit = st.sidebar.multiselect('Select Subunit:', list(df_sap['subunit'].unique()), default=[])
-if selected_subunit:
-    df_sap = df_sap[df_sap['subunit'].isin(selected_subunit)]
+# If 'GOMED' is selected, show additional filter for 'Subunit GOMED'
+if selected_unit == 'GOMED':
+    subunit_list = ['All'] + list(df_sap['subunit'].unique())
+    selected_subunit = st.sidebar.selectbox('Select Subunit:', subunit_list)
 
-selected_adminhr = st.sidebar.multiselect('Select Admin for HR:', list(df_sap['admin_hr'].unique()), default=[])
-if selected_adminhr:
-    df_sap = df_sap[df_sap['admin_hr'].isin(selected_adminhr)]
+    # Filter the DataFrame based on the selected 'Penugasan GOMED'
+    if selected_subunit != 'All':
+        df_sap = df_sap[df_sap['subunit'] == selected_subunit]
 
 selected_division = st.sidebar.multiselect('Select Division:', list(df_sap['division'].unique()), default=[])
 if selected_division:
     df_sap = df_sap[df_sap['division'].isin(selected_division)]
 
+selected_layer = st.sidebar.multiselect('Select Layer:', list(df_sap['layer'].unique()), default=[])
+if selected_division:
+    df_sap = df_sap[df_sap['layer'].isin(selected_division)]
+
+selected_region = st.sidebar.multiselect('Select Region:', list(df_sap['region'].unique()), default=[])
+if selected_region:
+    df_sap = df_sap[df_sap['region'].isin(selected_region)]
+
 # Sidebar: Breakdown variable
 st.sidebar.markdown('### Breakdown Variable')
 breakdown_variable = st.sidebar.selectbox('Select Breakdown Variable:', 
-                                          ['unit', 'subunit', 'admin_hr', 'layer', 'generation', 'gender', 'division', 'department'])
+                                          ['unit', 'subunit', 'layer', 'generation', 'gender', 'division', 'department', 'admin_goman'])
 
 # Create date filter for last_updated
 min_value = df_combined_mysql['last_updated'].min()
