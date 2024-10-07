@@ -58,8 +58,8 @@ if selected_division:
     df_sap = df_sap[df_sap['division'].isin(selected_division)]
 
 selected_layer = st.sidebar.multiselect('Select Layer:', list(df_sap['layer'].unique()), default=[])
-if selected_division:
-    df_sap = df_sap[df_sap['layer'].isin(selected_division)]
+if selected_layer:
+    df_sap = df_sap[df_sap['layer'].isin(selected_layer)]
 
 selected_region = st.sidebar.multiselect('Select Region:', list(df_sap['region'].unique()), default=[])
 if selected_region:
@@ -169,6 +169,14 @@ learning_hours['achieved_target'] = np.where(
 unit_achievement = learning_hours.pivot_table(index=breakdown_variable, values='nik_y', columns='achieved_target', 
                                               aggfunc='nunique', fill_value=0).reset_index()
 
+# Ensure both 'Achieved' and 'Not Achieved' columns exist
+if 'Achieved' not in unit_achievement:
+    unit_achievement['Achieved'] = 0
+if 'Inactive' not in unit_achievement:
+    unit_achievement['Inactive'] = 0
+if 'Not Achieved' not in unit_achievement:
+    unit_achievement['Not Achieved'] = 0
+
 # Normalize counts for 100% stacked bar chart
 unit_achievement['Achieved (%)'] = unit_achievement['Achieved'] / (unit_achievement['Achieved'] + unit_achievement['Not Achieved'] + unit_achievement['Inactive']) * 100
 unit_achievement['Not Achieved (%)'] = unit_achievement['Not Achieved'] / (unit_achievement['Achieved'] + unit_achievement['Not Achieved'] + unit_achievement['Inactive']) * 100
@@ -191,10 +199,6 @@ melted_percentage = unit_achievement.melt(
 
 # Combine counts and percentage into a single DataFrame
 melted_counts['Percent'] = melted_percentage['Percent']
-
-# Display unit_achievement
-#st.write('## Disclaimer:')
-#st.markdown(f'The target learning hours from {from_date.strftime("%B %Y")} to {to_date.strftime("%B %Y")} is {target_hours} hour(s) per employee.')
 
 # Calculate unique learning hours per 'nik_y'
 unique_learning_hours = learning_hours.drop_duplicates(subset=['nik_y'])
