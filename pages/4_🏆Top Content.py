@@ -52,8 +52,8 @@ if selected_division:
     df_sap = df_sap[df_sap['division'].isin(selected_division)]
 
 selected_layer = st.sidebar.multiselect('Select Layer:', list(df_sap['layer'].unique()), default=[])
-if selected_division:
-    df_sap = df_sap[df_sap['layer'].isin(selected_division)]
+if selected_layer:
+    df_sap = df_sap[df_sap['layer'].isin(selected_layer)]
 
 selected_region = st.sidebar.multiselect('Select Region:', list(df_sap['region'].unique()), default=[])
 if selected_region:
