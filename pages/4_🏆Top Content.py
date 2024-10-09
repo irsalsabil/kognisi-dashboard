@@ -17,47 +17,47 @@ merged_df, df_combined_mysql, df_sap, right_merged_df = finalize_data()
 
 # Sidebar: Unit filter
 st.sidebar.markdown('### Unit Filter')
-unit_list = ['All'] + list(df_sap['unit'].unique())
+unit_list = ['All'] + list(merged_df['unit'].unique())
 selected_unit = st.sidebar.selectbox('Select Unit:', unit_list)
 
 if selected_unit != 'All':
-    df_sap = df_sap[df_sap['unit'] == selected_unit]
+    merged_df = merged_df[merged_df['unit'] == selected_unit]
 
-penugasan_list = ['All'] + list(df_sap['penugasan'].unique())
+penugasan_list = ['All'] + list(merged_df['penugasan'].unique())
 selected_penugasan = st.sidebar.selectbox('Select Penugasan:', penugasan_list)
 
 if selected_penugasan != 'All':
-    df_sap = df_sap[df_sap['penugasan'] == selected_penugasan]
+    merged_df = merged_df[merged_df['penugasan'] == selected_penugasan]
 
 # If 'GOMAN' is selected, show additional filter for 'Admin GOMAN'
 if selected_unit == 'GOMAN':
-    admin_goman_list = ['All'] + list(df_sap['admin_goman'].unique())
+    admin_goman_list = ['All'] + list(merged_df['admin_goman'].unique())
     selected_admin_goman = st.sidebar.selectbox('Select Admin GOMAN:', admin_goman_list)
 
     # Filter the DataFrame based on the selected 'Admin GOMAN'
     if selected_admin_goman != 'All':
-        df_sap = df_sap[df_sap['admin_goman'] == selected_admin_goman]
+        merged_df = merged_df[merged_df['admin_goman'] == selected_admin_goman]
 
 # If 'GOMED' is selected, show additional filter for 'Subunit GOMED'
 if selected_unit == 'GOMED':
-    subunit_list = ['All'] + list(df_sap['subunit'].unique())
+    subunit_list = ['All'] + list(merged_df['subunit'].unique())
     selected_subunit = st.sidebar.selectbox('Select Subunit:', subunit_list)
 
     # Filter the DataFrame based on the selected 'Penugasan GOMED'
     if selected_subunit != 'All':
-        df_sap = df_sap[df_sap['subunit'] == selected_subunit]
+        merged_df = merged_df[merged_df['subunit'] == selected_subunit]
 
-selected_division = st.sidebar.multiselect('Select Division:', list(df_sap['division'].unique()), default=[])
+selected_division = st.sidebar.multiselect('Select Division:', list(merged_df['division'].unique()), default=[])
 if selected_division:
-    df_sap = df_sap[df_sap['division'].isin(selected_division)]
+    merged_df = merged_df[merged_df['division'].isin(selected_division)]
 
-selected_layer = st.sidebar.multiselect('Select Layer:', list(df_sap['layer'].unique()), default=[])
+selected_layer = st.sidebar.multiselect('Select Layer:', list(merged_df['layer'].unique()), default=[])
 if selected_layer:
-    df_sap = df_sap[df_sap['layer'].isin(selected_layer)]
+    merged_df = merged_df[merged_df['layer'].isin(selected_layer)]
 
-selected_region = st.sidebar.multiselect('Select Region:', list(df_sap['region'].unique()), default=[])
+selected_region = st.sidebar.multiselect('Select Region:', list(merged_df['region'].unique()), default=[])
 if selected_region:
-    df_sap = df_sap[df_sap['region'].isin(selected_region)]
+    merged_df = merged_df[merged_df['region'].isin(selected_region)]
 
 # Sidebar: Add a selectbox for type filter
 st.sidebar.markdown('### Content Filter')
