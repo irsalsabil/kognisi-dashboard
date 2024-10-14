@@ -62,7 +62,7 @@ def finalize_data():
     merged_df = pd.merge(df_combined_mysql, df_sap, left_on='count AL', right_on='nik', how='left', indicator=True)
     merged_df['status'] = merged_df['_merge'].apply(lambda x: 'Internal' if x == 'both' else 'External')
     merged_df.drop(columns=['_merge'], inplace=True)
-    merged_df.drop(columns=[''], inplace=True)
+    #merged_df.drop(columns=[''], inplace=True)
 
     # Convert specific columns to string
     columns_to_convert = ['email_x', 'name', 'unit', 'subunit', 'division']
