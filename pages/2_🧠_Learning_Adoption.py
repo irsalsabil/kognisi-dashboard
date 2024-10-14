@@ -142,13 +142,15 @@ base = alt.Chart(melted_counts).mark_bar().encode(
     width=alt.Step(40)   # Adjust width as needed
 )
 
-# Add labels only for Active Learners
+# Add labels only for Active Learners with black text
 text = base.mark_text(
     align='center',
     baseline='middle',
-    dy=-10  # Adjust label position above the bars
+    dy=20,  # Adjust label position above the bars
+    fontWeight='bold'  # Make the text bold
 ).encode(
-    text=alt.Text('Percent:Q', format='.0f'),
+    text=alt.Text('Percent:Q', format='.0f'),  # Display percentage without decimals
+    color=alt.value('black')  # Explicitly set the text color to black
 ).transform_filter(
     alt.FieldEqualPredicate(field='Learner Type', equal='Active Learners')  # Only label Active Learners
 )
