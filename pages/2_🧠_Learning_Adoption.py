@@ -142,6 +142,17 @@ base = alt.Chart(melted_counts).mark_bar().encode(
     width=alt.Step(40)   # Adjust width as needed
 )
 
+# Add labels only for Active Learners
+text = base.mark_text(
+    align='center',
+    baseline='middle',
+    dy=-10  # Adjust label position above the bars
+).encode(
+    text=alt.Text('Percent:Q', format='.0f'),
+).transform_filter(
+    alt.FieldEqualPredicate(field='Learner Type', equal='Active Learners')  # Only label Active Learners
+)
+
 # Add the Learning Adoption line chart
 line = alt.Chart(final_counts).mark_line(color='green').encode(
     x=f'{breakdown_variable}:N',
@@ -153,7 +164,7 @@ line = alt.Chart(final_counts).mark_line(color='green').encode(
 )
 
 # Combine the charts
-combo_chart = alt.layer(base, line).resolve_scale(
+combo_chart = alt.layer(base, text, line).resolve_scale(
     y='shared'  # Use shared scale for both charts
 ).properties(
     width=alt.Step(40)  # Adjust width as needed
@@ -161,6 +172,10 @@ combo_chart = alt.layer(base, line).resolve_scale(
 
 # Display the chart using Streamlit
 st.altair_chart(combo_chart, use_container_width=True)
+
+# Display final_counts
+with st.expander('Data Source'):
+    st.dataframe(final_counts)
 
 # Display the raw data
 st.header('Download Data', divider='gray')
